@@ -1,0 +1,95 @@
+using Microsoft.EntityFrameworkCore;
+using Fitly.API.Models;
+
+namespace Fitly.API.Data
+{
+    public class FitlyDbContext : DbContext
+    {
+        public FitlyDbContext(DbContextOptions<FitlyDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<User> Users { get; set; }
+        public DbSet<Exercise> Exercises { get; set; }
+        public DbSet<Workout> Workouts { get; set; }
+        public DbSet<WorkoutSet> WorkoutSets { get; set; }
+        public DbSet<Food> Foods { get; set; }
+        public DbSet<NutritionLog> NutritionLogs { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // User
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(256);
+                entity.Property(e => e.PasswordHash).IsRequired();
+                entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+                entity.HasIndex(e => e.Email).IsUnique();
+            });
+
+            // Exercise
+            modelBuilder.Entity<Exercise>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.MuscleGroup).IsRequired().HasMaxLength(100);
+            });
+
+            // Workout
+            modelBuilder.Entity<Workout>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.Workouts)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // WorkoutSet
+            modelBuilder.Entity<WorkoutSet>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Weight).HasPrecision(10, 2);
+                entity.HasOne(e => e.Workout)
+                    .WithMany(w => w.Sets)
+                    .HasForeignKey(e => e.WorkoutId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Exercise)
+                    .WithMany(ex => ex.WorkoutSets)
+                    .HasForeignKey(e => e.ExerciseId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Food
+            modelBuilder.Entity<Food>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.CaloriesPer100g).HasPrecision(10, 2);
+                entity.Property(e => e.ProteinPer100g).HasPrecision(10, 2);
+                entity.Property(e => e.CarbsPer100g).HasPrecision(10, 2);
+                entity.Property(e => e.FatPer100g).HasPrecision(10, 2);
+            });
+
+            // NutritionLog
+            modelBuilder.Entity<NutritionLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Quantity).HasPrecision(10, 2);
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.NutritionLogs)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Food)
+                    .WithMany(f => f.NutritionLogs)
+                    .HasForeignKey(e => e.FoodId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+        }
+    }
+}
