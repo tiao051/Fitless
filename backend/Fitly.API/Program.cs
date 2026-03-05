@@ -9,8 +9,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add DbContext with PostgreSQL
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Server=localhost;Port=5432;Database=fitly_db;User Id=fitly_user;Password=fitly_password;";
+var host = Environment.GetEnvironmentVariable("DATABASE_HOST") ?? "localhost";
+var port = Environment.GetEnvironmentVariable("DATABASE_PORT") ?? "5432";
+var database = Environment.GetEnvironmentVariable("DATABASE_NAME") ?? "fitly_db";
+var user = Environment.GetEnvironmentVariable("DATABASE_USER") ?? "fitly_user";
+var password = Environment.GetEnvironmentVariable("DATABASE_PASSWORD") ?? "fitly_password";
+
+var connectionString = $"Server={host};Port={port};Database={database};User Id={user};Password={password};";
 
 builder.Services.AddDbContext<FitlyDbContext>(options =>
     options.UseNpgsql(connectionString));
