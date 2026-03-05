@@ -1,0 +1,3 @@
+@Fitly.API_HostAddress = http://localhost:5062
+
+# Add your API endpoints here
