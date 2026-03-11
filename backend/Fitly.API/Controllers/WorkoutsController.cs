@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Fitly.API.DTOs;
 using Fitly.API.Services;
 
@@ -18,6 +19,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Creates a new workout with sets for a user.
         /// </summary>
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<WorkoutResponse>> CreateWorkout(int userId, CreateWorkoutRequest request)
         {
@@ -41,6 +43,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Retrieves a specific workout with all its sets.
         /// </summary>
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<WorkoutResponse>> GetWorkout(int userId, int id)
         {
@@ -54,6 +57,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Retrieves all workouts for a user.
         /// </summary>
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<List<WorkoutResponse>>> GetUserWorkouts(int userId)
         {
@@ -64,6 +68,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Retrieves workouts for a user within a date range.
         /// </summary>
+        [Authorize]
         [HttpGet("range")]
         public async Task<ActionResult<List<WorkoutResponse>>> GetUserWorkoutsByDateRange(
             int userId,
@@ -80,6 +85,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Deletes a workout and all its sets.
         /// </summary>
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteWorkout(int userId, int id)
         {

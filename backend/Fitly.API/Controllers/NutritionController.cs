@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Fitly.API.DTOs;
 using Fitly.API.Services;
 
@@ -56,6 +57,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Creates a new food entry.
         /// </summary>
+        [Authorize]
         [HttpPost("foods")]
         public async Task<ActionResult<FoodResponse>> CreateFood(CreateFoodRequest request)
         {
@@ -79,6 +81,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Logs a nutrition entry for a user.
         /// </summary>
+        [Authorize]
         [HttpPost("logs/{userId}")]
         public async Task<ActionResult<NutritionLogResponse>> LogNutrition(int userId, CreateNutritionLogRequest request)
         {
@@ -99,6 +102,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Retrieves all nutrition logs for a user.
         /// </summary>
+        [Authorize]
         [HttpGet("logs/{userId}")]
         public async Task<ActionResult<List<NutritionLogResponse>>> GetUserNutritionLogs(int userId)
         {
@@ -109,6 +113,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Retrieves daily nutrition summary for a specific date.
         /// </summary>
+        [Authorize]
         [HttpGet("summary/{userId}")]
         public async Task<ActionResult<DailyNutritionSummaryResponse>> GetDailySummary(int userId, [FromQuery] DateTime date)
         {
@@ -119,6 +124,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Deletes a nutrition log entry.
         /// </summary>
+        [Authorize]
         [HttpDelete("logs/{id}")]
         public async Task<IActionResult> DeleteNutritionLog(int id)
         {

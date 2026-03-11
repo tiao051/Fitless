@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Fitly.API.DTOs;
 using Fitly.API.Services;
 
@@ -41,6 +42,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Creates a new exercise.
         /// </summary>
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<ExerciseResponse>> CreateExercise(CreateExerciseRequest request)
         {
@@ -54,6 +56,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Updates an existing exercise.
         /// </summary>
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<ExerciseResponse>> UpdateExercise(int id, CreateExerciseRequest request)
         {
@@ -70,6 +73,7 @@ namespace Fitly.API.Controllers
         /// <summary>
         /// Deletes an exercise.
         /// </summary>
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteExercise(int id)
         {

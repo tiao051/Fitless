@@ -27,5 +27,6 @@ namespace Fitly.API.DTOs
     {
         public UserResponse User { get; set; } = null!;
         public string Message { get; set; } = null!;
+        public string? Token { get; set; }
     }
 }

@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
 using Fitly.API.Data;
 using Fitly.API.Models;
 using Fitly.API.DTOs;
+using Fitly.API.Services;
 
 namespace Fitly.API.Controllers
 {
@@ -13,10 +15,12 @@ namespace Fitly.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly FitlyDbContext _context;
+        private readonly IJwtService _jwtService;
 
-        public UsersController(FitlyDbContext context)
+        public UsersController(FitlyDbContext context, IJwtService jwtService)
         {
             _context = context;
+            _jwtService = jwtService;
         }
 
         [HttpPost("register")]
@@ -54,6 +58,8 @@ namespace Fitly.API.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
+            var token = _jwtService.GenerateToken(user);
+
             return Ok(new AuthResponse
             {
                 User = new UserResponse
@@ -64,7 +70,8 @@ namespace Fitly.API.Controllers
                     LastName = user.LastName,
                     CreatedAt = user.CreatedAt
                 },
-                Message = "User registered successfully."
+                Message = "User registered successfully.",
+                Token = token
             });
         }
 
@@ -88,6 +95,8 @@ namespace Fitly.API.Controllers
                 return Unauthorized("Invalid email or password.");
             }
 
+            var token = _jwtService.GenerateToken(user);
+
             return Ok(new AuthResponse
             {
                 User = new UserResponse
@@ -98,10 +107,12 @@ namespace Fitly.API.Controllers
                     LastName = user.LastName,
                     CreatedAt = user.CreatedAt
                 },
-                Message = "Login successful."
+                Message = "Login successful.",
+                Token = token
             });
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<UserResponse>> GetUser(int id)
         {
