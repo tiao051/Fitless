@@ -136,5 +136,40 @@ namespace Fitly.API.Controllers
         }
 
         #endregion
+
+        #region Meal Calculation Endpoint
+
+        /// <summary>
+        /// Calculates total nutrition for a meal (list of foods with quantities).
+        /// User provides a list of foods and quantities, API returns total calories, protein, carbs, fat.
+        /// Example request:
+        /// {
+        ///   "items": [
+        ///     { "foodId": 1, "quantity": 100 },
+        ///     { "foodId": 2, "quantity": 150 }
+        ///   ]
+        /// }
+        /// </summary>
+        [HttpPost("calculate-meal")]
+        public async Task<ActionResult<MealNutritionResponse>> CalculateMealNutrition(CalculateMealNutritionRequest request)
+        {
+            if (request?.Items == null || request.Items.Count == 0)
+                return BadRequest(new { message = "Meal must contain at least one food item." });
+
+            if (request.Items.Any(item => item.Quantity <= 0))
+                return BadRequest(new { message = "All food quantities must be greater than zero." });
+
+            try
+            {
+                var result = await _nutritionService.CalculateMealNutritionAsync(request);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        #endregion
     }
 }
