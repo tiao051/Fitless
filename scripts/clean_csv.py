@@ -3,7 +3,6 @@ import os
 
 CSV_FILE = os.path.join(os.path.dirname(__file__), "data", "fitly_data.csv")
 
-print(f"[*] Reading {CSV_FILE}...")
 rows = []
 removed = 0
 
@@ -20,9 +19,6 @@ with open(CSV_FILE, "r", encoding="utf-8") as f:
             rows.append(row)
         else:
             removed += 1
-
-print(f"[*] Removed {removed} items with invalid calories")
-print(f"[*] Keeping {len(rows)} items")
 
 # Write back
 with open(CSV_FILE, "w", newline="", encoding="utf-8") as f:

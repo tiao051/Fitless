@@ -75,7 +75,6 @@ def process_foods(rows):
     2. Group identical names
     3. Create Master Food if >1 product
     """
-    print("[*] Analyzing data...\n")
     
     # Group by name
     name_groups = defaultdict(list)
@@ -100,12 +99,7 @@ def process_foods(rows):
             unique_single.append((name, indices))
         else:
             duplicate_single.append((name, indices))
-    
-    print(f"[*] Single-word names:")
-    print(f"    - Unique (1 product): {len(unique_single)}")
-    print(f"    - Duplicate (>1 product): {len(duplicate_single)}")
-    print(f"[*] Multi-word names (skipped): {len(ignored_rows)}\n")
-    
+
     # Create processed rows
     processed_rows = [row.copy() for row in rows]
     master_foods_list = []
@@ -169,32 +163,18 @@ def save_results(processed_rows, master_foods_list, unique_single, duplicate_sin
 
 
 def main():
-    print("[*] Starting...\n")
     
     if not os.path.exists(INPUT_CSV):
         print(f"[ERROR] File not found: {INPUT_CSV}")
         return
     
     rows = load_csv(INPUT_CSV)
-    print(f"[OK] Loaded {len(rows)} products\n")
     
     # Process
     processed_rows, master_foods, grouping_info, unique_single, duplicate_single, ignored_count = process_foods(rows)
     
     # Save
     save_results(processed_rows, master_foods, unique_single, duplicate_single, ignored_count)
-    
-    # Summary
-    print("\n" + "=" * 100)
-    print("RESULTS:")
-    print("=" * 100)
-    print(f"Single-word names:")
-    print(f"  - Unique: {len(unique_single)}")
-    print(f"  - Duplicate -> Master Foods: {len(duplicate_single)}")
-    print(f"Multi-word names (skipped): {ignored_count}")
-    print(f"Total Master Foods created: {len(master_foods)}")
-    print("\n[OK] Done!")
-
 
 if __name__ == "__main__":
     main()

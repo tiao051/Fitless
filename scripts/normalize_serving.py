@@ -45,7 +45,7 @@ def normalize_serving_text(text):
         "ounces": "oz",
         "ona": "oz",
         "ozt": "oz",
-        "onz": "oz",  # Add this
+        "onz": "oz", 
         "cups": "cup",
         "mlt": "ml",
         "g": "g",
@@ -56,9 +56,6 @@ def normalize_serving_text(text):
         "grm" :"g",
         "cup g" : "cup"
     }
-    
-    # Try to extract number and unit
-    # Patterns: "1/3 cup", "0.333 cup", "1.7oz (50g)", "8 fl oz", "4 ONZ", etc.
     
     # Remove parentheses content like "(50g)"
     text_cleaned = re.sub(r'\([^)]*\)', '', text).strip()
@@ -98,7 +95,6 @@ def normalize_serving_text(text):
     
     return text
 
-print(f"[*] Cleaning {CSV_FILE}...")
 rows = []
 
 # Read and clean
@@ -117,8 +113,6 @@ with open(CSV_FILE, "r", encoding="utf-8") as f:
         
         rows.append(row)
 
-print(f"[*] Processed {len(rows)} items")
-
 # Write to new file
 # Create data subdirectory if not exists
 data_dir = os.path.join(SCRIPT_DIR, "data")
@@ -129,6 +123,4 @@ with open(output_file, "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=headers)
     writer.writeheader()
     writer.writerows(rows)
-
-print(f"[OK] Cleaned CSV saved to {output_file}!")
 
