@@ -1,7 +1,7 @@
 import csv
 import os
 
-CSV_FILE = os.path.join(os.path.dirname(__file__), "..", "fitly_nutrition_final.csv")
+CSV_FILE = os.path.join(os.path.dirname(__file__), "data", "fitly_data.csv")
 
 print(f"[*] Reading {CSV_FILE}...")
 rows = []

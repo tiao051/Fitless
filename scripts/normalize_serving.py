@@ -1,7 +1,13 @@
 import csv
 import re
+import os
 
-CSV_FILE = "fitly_nutrition_final.csv"
+# Get script directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PARENT_DIR = os.path.dirname(SCRIPT_DIR)
+
+# CSV file path (latest grouped foods)
+CSV_FILE = os.path.join(SCRIPT_DIR, "data", "fitly_data.csv")
 
 def normalize_serving_unit(unit):
     """Normalize serving unit to standard values"""
@@ -33,26 +39,22 @@ def normalize_serving_text(text):
     
     # Common unit mappings
     unit_map = {
-        "oz": "oz",
+        "oza" : "oz",
+        "o" : "oz",
         "ounce": "oz",
         "ounces": "oz",
         "ona": "oz",
         "ozt": "oz",
         "onz": "oz",  # Add this
-        "cup": "cup",
         "cups": "cup",
-        "ml": "ml",
         "mlt": "ml",
         "g": "g",
         "gram": "g",
         "grams": "g",
-        "fl oz": "fl oz",
         "fl_oz": "fl oz",
-        "container": "container",
-        "slice": "slice",
-        "matzo": "matzo",
-        "muffin": "muffin",
         "unid": "unit",
+        "grm" :"g",
+        "cup g" : "cup"
     }
     
     # Try to extract number and unit
@@ -76,9 +78,7 @@ def normalize_serving_text(text):
             else:
                 number = float(number_str)
             
-            # Round to 2 decimals
-            number = round(number, 2)
-            
+            # Keep original fraction (no rounding)
             # Normalize unit
             normalized_unit = unit_map.get(unit_str, unit_str)
             
@@ -119,9 +119,12 @@ with open(CSV_FILE, "r", encoding="utf-8") as f:
 
 print(f"[*] Processed {len(rows)} items")
 
-# Write to new file with timestamp to avoid lock issues
-from datetime import datetime
-output_file = f"fitly_nutrition_normalized_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+# Write to new file
+# Create data subdirectory if not exists
+data_dir = os.path.join(SCRIPT_DIR, "data")
+os.makedirs(data_dir, exist_ok=True)
+
+output_file = os.path.join(data_dir, "fitly_data.csv")
 with open(output_file, "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=headers)
     writer.writeheader()
@@ -129,12 +132,3 @@ with open(output_file, "w", newline="", encoding="utf-8") as f:
 
 print(f"[OK] Cleaned CSV saved to {output_file}!")
 
-# Show sample
-print("\n[Sample] First 10 rows (serving_unit, serving_text):")
-with open(output_file, "r", encoding="utf-8") as f:
-    reader = csv.DictReader(f)
-    for i, row in enumerate(reader):
-        if i < 10:
-            print(f"  {row['serving_unit']:10} | {row['serving_text']}")
-        else:
-            break
