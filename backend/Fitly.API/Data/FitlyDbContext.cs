@@ -70,10 +70,22 @@ namespace Fitly.API.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Brand).HasMaxLength(100);
+                entity.Property(e => e.ServingUnit).HasMaxLength(20);
+                entity.Property(e => e.ServingText).HasMaxLength(100);
+                
+                // Precision for nutritional values
                 entity.Property(e => e.CaloriesPer100g).HasPrecision(10, 2);
                 entity.Property(e => e.ProteinPer100g).HasPrecision(10, 2);
                 entity.Property(e => e.CarbsPer100g).HasPrecision(10, 2);
                 entity.Property(e => e.FatPer100g).HasPrecision(10, 2);
+                entity.Property(e => e.FiberPer100g).HasPrecision(10, 2);
+                entity.Property(e => e.ServingSize).HasPrecision(10, 2);
+                
+                // Indexes for search and filtering
+                entity.HasIndex(e => e.Name);
+                entity.HasIndex(e => e.Brand);
+                entity.HasIndex(e => e.IsGeneric);
             });
 
             // NutritionLog

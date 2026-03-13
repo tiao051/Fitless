@@ -32,11 +32,17 @@ namespace Fitly.API.DTOs
     public class CreateFoodRequest
     {
         public string Name { get; set; } = null!;
-        public string? Description { get; set; }
+        public string? Brand { get; set; }
+        public long? FdcId { get; set; }
+        public bool IsGeneric { get; set; }
         public decimal CaloriesPer100g { get; set; }
         public decimal ProteinPer100g { get; set; }
         public decimal CarbsPer100g { get; set; }
         public decimal FatPer100g { get; set; }
+        public decimal FiberPer100g { get; set; }
+        public decimal? ServingSize { get; set; }
+        public string? ServingUnit { get; set; }
+        public string? ServingText { get; set; }
     }
 
     /// <summary>
@@ -46,11 +52,17 @@ namespace Fitly.API.DTOs
     {
         public int Id { get; set; }
         public string Name { get; set; } = null!;
-        public string? Description { get; set; }
+        public string? Brand { get; set; }
+        public long? FdcId { get; set; }
+        public bool IsGeneric { get; set; }
         public decimal CaloriesPer100g { get; set; }
         public decimal ProteinPer100g { get; set; }
         public decimal CarbsPer100g { get; set; }
         public decimal FatPer100g { get; set; }
+        public decimal FiberPer100g { get; set; }
+        public decimal? ServingSize { get; set; }
+        public string? ServingUnit { get; set; }
+        public string? ServingText { get; set; }
     }
 
     /// <summary>
@@ -75,5 +87,42 @@ namespace Fitly.API.DTOs
         public decimal TotalCarbs { get; set; }
         public decimal TotalFat { get; set; }
         public List<NutritionLogResponse> Meals { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Request DTO for calculating total nutrition of a meal.
+    /// </summary>
+    public class CalculateMealNutritionRequest
+    {
+        public List<MealItemRequest> Items { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Meal item for calculation.
+    /// </summary>
+    public class MealItemRequest
+    {
+        public int FoodId { get; set; }
+        public decimal Quantity { get; set; } // in grams
+    }
+
+    /// <summary>
+    /// Response DTO for meal nutrition calculation.
+    /// </summary>
+    public class MealNutritionResponse
+    {
+        public List<FoodPortionResponse> Items { get; set; } = new();
+        public NutritionBreakdownResponse TotalNutrition { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Food portion in a meal with calculated nutrition.
+    /// </summary>
+    public class FoodPortionResponse
+    {
+        public int FoodId { get; set; }
+        public string FoodName { get; set; } = null!;
+        public decimal Quantity { get; set; }
+        public NutritionBreakdownResponse Nutrition { get; set; } = null!;
     }
 }

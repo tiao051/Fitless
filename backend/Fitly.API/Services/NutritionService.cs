@@ -27,11 +27,17 @@ namespace Fitly.API.Services
             var food = new Food
             {
                 Name = request.Name,
-                Description = request.Description,
+                Brand = request.Brand,
+                FdcId = request.FdcId,
+                IsGeneric = request.IsGeneric,
                 CaloriesPer100g = request.CaloriesPer100g,
                 ProteinPer100g = request.ProteinPer100g,
                 CarbsPer100g = request.CarbsPer100g,
-                FatPer100g = request.FatPer100g
+                FatPer100g = request.FatPer100g,
+                FiberPer100g = request.FiberPer100g,
+                ServingSize = request.ServingSize,
+                ServingUnit = request.ServingUnit,
+                ServingText = request.ServingText
             };
 
             _context.Foods.Add(food);
@@ -186,11 +192,17 @@ namespace Fitly.API.Services
             {
                 Id = food.Id,
                 Name = food.Name,
-                Description = food.Description,
+                Brand = food.Brand,
+                FdcId = food.FdcId,
+                IsGeneric = food.IsGeneric,
                 CaloriesPer100g = food.CaloriesPer100g,
                 ProteinPer100g = food.ProteinPer100g,
                 CarbsPer100g = food.CarbsPer100g,
-                FatPer100g = food.FatPer100g
+                FatPer100g = food.FatPer100g,
+                FiberPer100g = food.FiberPer100g,
+                ServingSize = food.ServingSize,
+                ServingUnit = food.ServingUnit,
+                ServingText = food.ServingText
             };
         }
 
@@ -230,6 +242,41 @@ namespace Fitly.API.Services
                 Carbs = food.CarbsPer100g * scale,
                 Fat = food.FatPer100g * scale
             };
+        }
+
+        /// <summary>
+        /// Calculates total nutrition for a meal consisting of multiple food items.
+        /// </summary>
+        public async Task<MealNutritionResponse> CalculateMealNutritionAsync(CalculateMealNutritionRequest request)
+        {
+            var response = new MealNutritionResponse();
+            var totalNutrition = new NutritionBreakdownResponse();
+
+            foreach (var item in request.Items)
+            {
+                var food = await _context.Foods.FindAsync(item.FoodId);
+                if (food == null)
+                    throw new InvalidOperationException($"Food with ID {item.FoodId} not found.");
+
+                var nutritionBreakdown = CalculateNutritionBreakdown(food, item.Quantity);
+                
+                response.Items.Add(new FoodPortionResponse
+                {
+                    FoodId = food.Id,
+                    FoodName = food.Name,
+                    Quantity = item.Quantity,
+                    Nutrition = nutritionBreakdown
+                });
+
+                // Accumulate totals
+                totalNutrition.Calories += nutritionBreakdown.Calories;
+                totalNutrition.Protein += nutritionBreakdown.Protein;
+                totalNutrition.Carbs += nutritionBreakdown.Carbs;
+                totalNutrition.Fat += nutritionBreakdown.Fat;
+            }
+
+            response.TotalNutrition = totalNutrition;
+            return response;
         }
 
         #endregion

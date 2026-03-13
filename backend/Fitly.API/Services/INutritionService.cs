@@ -18,5 +18,8 @@ namespace Fitly.API.Services
         Task<List<NutritionLogResponse>> GetUserNutritionLogsAsync(int userId);
         Task<DailyNutritionSummaryResponse> GetDailyNutritionSummaryAsync(int userId, DateTime date);
         Task<bool> DeleteNutritionLogAsync(int id);
+
+        // Meal calculation
+        Task<MealNutritionResponse> CalculateMealNutritionAsync(CalculateMealNutritionRequest request);
     }
 }

@@ -22,6 +22,7 @@ builder.Services.AddScoped<IExerciseService, ExerciseService>();
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
 builder.Services.AddScoped<INutritionService, NutritionService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<FoodSeeder>();
 
 // Configure JWT Authentication
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY")
@@ -74,6 +75,32 @@ builder.Services.AddDbContext<FitlyDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 var app = builder.Build();
+
+// Apply database migrations and seed data
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<FitlyDbContext>();
+    var foodSeeder = scope.ServiceProvider.GetRequiredService<FoodSeeder>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        // Apply pending migrations
+        logger.LogInformation("Applying database migrations...");
+        await dbContext.Database.MigrateAsync();
+        logger.LogInformation("Migrations applied successfully");
+
+        // Seed food data from CSV
+        var csvPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "scripts", "data", "fitly_data.csv");
+        logger.LogInformation($"Seeding foods from: {csvPath}");
+        await foodSeeder.SeedFoodsAsync(csvPath);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError($"Error during database setup: {ex.Message}");
+        throw;
+    }
+}
 
 // Configure middleware
 if (app.Environment.IsDevelopment())
