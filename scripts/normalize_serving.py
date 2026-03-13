@@ -1,13 +1,64 @@
 import csv
 import re
 import os
+from fractions import Fraction
 
 # Get script directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.dirname(SCRIPT_DIR)
 
 # CSV file path (latest grouped foods)
-CSV_FILE = os.path.join(SCRIPT_DIR, "data", "fitly_data.csv")
+CSV_FILE = os.path.join(SCRIPT_DIR, "data", "fitly_data_processed.csv")
+
+# Common fractions for readable serving sizes
+COMMON_FRACTIONS = [
+    # Fractions (higher priority due to smaller denominator)
+    Fraction(1, 2),
+    Fraction(1, 3), Fraction(2, 3),
+    Fraction(1, 4), Fraction(3, 4),
+    Fraction(1, 5), Fraction(2, 5), Fraction(3, 5), Fraction(4, 5),
+    Fraction(1, 8), Fraction(3, 8), Fraction(5, 8), Fraction(7, 8),
+    Fraction(1, 6), Fraction(5, 6),
+    Fraction(1, 10), Fraction(3, 10), Fraction(7, 10), Fraction(9, 10),
+]
+
+def decimal_to_fraction(num_str):
+    """Convert decimal number to simple fraction"""
+    try:
+        num = float(num_str)
+        
+        if num == int(num):
+            return str(int(num))
+        
+        # Get fractional part
+        frac_part = num - int(num)
+        
+        if frac_part == 0:
+            return str(int(num))
+        
+        # Find closest common fraction for the fractional part
+        closest_frac = None
+        min_diff = float('inf')
+        
+        for frac in COMMON_FRACTIONS:
+            diff = abs(float(frac) - frac_part)
+            if diff < min_diff:
+                min_diff = diff
+                closest_frac = frac
+        
+        # If we found a good match in fractions
+        if closest_frac and min_diff < 0.05:  # Within 5% tolerance
+            whole = int(num)
+            if whole > 0:
+                return f"{whole}-{closest_frac}".replace(" ", "")
+            else:
+                return str(closest_frac).replace(" ", "")
+        
+        # Fallback: use Fraction with limit_denominator but with smaller limit
+        frac = Fraction(num).limit_denominator(12)
+        return str(frac).replace(" ", "")
+    except:
+        return num_str
 
 def normalize_serving_unit(unit):
     """Normalize serving unit to standard values"""
@@ -31,7 +82,7 @@ def normalize_serving_unit(unit):
     return unit
 
 def normalize_serving_text(text):
-    """Normalize serving text to consistent format"""
+    """Normalize serving text with fractions instead of decimals"""
     if not text or text == "N/A":
         return "N/A"
     
@@ -67,22 +118,20 @@ def normalize_serving_text(text):
         number_str = match.group(1).strip()
         unit_str = (match.group(2) or "").strip().lower()
         
-        # Try to evaluate fraction/decimal
+        # Convert number to fraction
         try:
             if '/' in number_str:
-                parts = number_str.split('/')
-                number = float(parts[0]) / float(parts[1])
+                # Already a fraction, keep it
+                return f"{number_str} {unit_str}".strip() if unit_str else number_str
             else:
-                number = float(number_str)
-            
-            # Keep original fraction (no rounding)
-            # Normalize unit
-            normalized_unit = unit_map.get(unit_str, unit_str)
-            
-            if unit_str and normalized_unit:
-                return f"{number} {normalized_unit}".strip()
-            elif number:
-                return str(number)
+                # Convert decimal to fraction
+                frac_str = decimal_to_fraction(number_str)
+                normalized_unit = unit_map.get(unit_str, unit_str)
+                
+                if unit_str and normalized_unit:
+                    return f"{frac_str} {normalized_unit}".strip()
+                elif frac_str:
+                    return frac_str
         except:
             pass
     
@@ -94,6 +143,22 @@ def normalize_serving_text(text):
             break
     
     return text
+
+def normalize_serving_size(size_str):
+    """Normalize serving size - keep as decimal rounded to 2 places for precision"""
+    if not size_str or size_str == "N/A" or size_str == "-1":
+        return size_str
+    
+    try:
+        size = float(size_str)
+        # If it's a whole number, return as integer
+        if size == int(size):
+            return str(int(size))
+        # Otherwise round to 2 decimal places
+        return f"{size:.2f}".rstrip('0').rstrip('.')
+    except:
+        return size_str
+
 
 rows = []
 
@@ -107,9 +172,13 @@ with open(CSV_FILE, "r", encoding="utf-8") as f:
         if "serving_unit" in row:
             row["serving_unit"] = normalize_serving_unit(row["serving_unit"])
         
-        # Normalize serving_text
+        # Normalize serving_text to fractions
         if "serving_text" in row:
             row["serving_text"] = normalize_serving_text(row["serving_text"])
+        
+        # Normalize serving_size to fractions
+        if "serving_size" in row:
+            row["serving_size"] = normalize_serving_size(row["serving_size"])
         
         rows.append(row)
 
@@ -119,8 +188,21 @@ data_dir = os.path.join(SCRIPT_DIR, "data")
 os.makedirs(data_dir, exist_ok=True)
 
 output_file = os.path.join(data_dir, "fitly_data.csv")
-with open(output_file, "w", newline="", encoding="utf-8") as f:
+temp_file = output_file + ".tmp"
+
+with open(temp_file, "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=headers)
     writer.writeheader()
     writer.writerows(rows)
+
+# Replace original file
+try:
+    os.replace(temp_file, output_file)
+    print(f"[OK] Normalized data saved to: {output_file}")
+except:
+    # If replace fails, just save with a different name
+    alt_file = os.path.join(data_dir, "fitly_data_normalized_temp.csv")
+    os.rename(temp_file, alt_file)
+    print(f"[OK] Normalized data saved to: {alt_file}")
+    print(f"[NOTE] Please manually replace fitly_data.csv with {alt_file}")
 
