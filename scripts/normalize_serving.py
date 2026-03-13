@@ -1,6 +1,7 @@
 import csv
 import re
 import os
+import math
 from fractions import Fraction
 
 # Get script directory
@@ -8,7 +9,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.dirname(SCRIPT_DIR)
 
 # CSV file path (latest grouped foods)
-CSV_FILE = os.path.join(SCRIPT_DIR, "data", "fitly_data_processed.csv")
+CSV_FILE = os.path.join(SCRIPT_DIR, "data", "fitly_data_v2.csv")
 
 # Common fractions for readable serving sizes
 COMMON_FRACTIONS = [
@@ -23,40 +24,13 @@ COMMON_FRACTIONS = [
 ]
 
 def decimal_to_fraction(num_str):
-    """Convert decimal number to simple fraction"""
+    """Convert decimal number by rounding up to nearest whole number"""
     try:
         num = float(num_str)
         
-        if num == int(num):
-            return str(int(num))
-        
-        # Get fractional part
-        frac_part = num - int(num)
-        
-        if frac_part == 0:
-            return str(int(num))
-        
-        # Find closest common fraction for the fractional part
-        closest_frac = None
-        min_diff = float('inf')
-        
-        for frac in COMMON_FRACTIONS:
-            diff = abs(float(frac) - frac_part)
-            if diff < min_diff:
-                min_diff = diff
-                closest_frac = frac
-        
-        # If we found a good match in fractions
-        if closest_frac and min_diff < 0.05:  # Within 5% tolerance
-            whole = int(num)
-            if whole > 0:
-                return f"{whole}-{closest_frac}".replace(" ", "")
-            else:
-                return str(closest_frac).replace(" ", "")
-        
-        # Fallback: use Fraction with limit_denominator but with smaller limit
-        frac = Fraction(num).limit_denominator(12)
-        return str(frac).replace(" ", "")
+        # Round up to nearest integer for simplicity (3.5 → 4, 1.5 → 2)
+        rounded = math.ceil(num)
+        return str(int(rounded))
     except:
         return num_str
 
@@ -108,30 +82,56 @@ def normalize_serving_text(text):
         "cup g" : "cup"
     }
     
+    # Store prefix like "about" or "approximately"
+    prefix = ""
+    text_to_process = text
+    if text.lower().startswith(('about ', 'approximately ')):
+        parts = text.split(' ', 1)
+        prefix = parts[0] + " "
+        text_to_process = parts[1] if len(parts) > 1 else text
+    
     # Remove parentheses content like "(50g)"
-    text_cleaned = re.sub(r'\([^)]*\)', '', text).strip()
+    text_cleaned = re.sub(r'\([^)]*\)', '', text_to_process).strip()
     
     # Try to match "number unit" pattern
-    match = re.match(r'([0-9./]+)\s*([a-zA-Z\s]+)?', text_cleaned)
+    match = re.match(r'([0-9./\-]+)\s*([a-zA-Z\s]+)?', text_cleaned)
     
     if match:
         number_str = match.group(1).strip()
         unit_str = (match.group(2) or "").strip().lower()
         
-        # Convert number to fraction
+        # Convert number to fraction/decimal
         try:
-            if '/' in number_str:
+            if '-' in number_str:
+                # Mixed fraction like "3-1/2" - convert to decimal
+                parts = number_str.split('-')
+                if len(parts) == 2 and '/' in parts[1]:
+                    try:
+                        whole = int(parts[0])
+                        frac = Fraction(parts[1])
+                        num = whole + float(frac)
+                        frac_str = decimal_to_fraction(str(num))
+                    except:
+                        frac_str = decimal_to_fraction(number_str)
+                else:
+                    frac_str = decimal_to_fraction(number_str)
+            elif '/' in number_str:
                 # Already a fraction, keep it
-                return f"{number_str} {unit_str}".strip() if unit_str else number_str
+                frac_str = number_str
             else:
                 # Convert decimal to fraction
                 frac_str = decimal_to_fraction(number_str)
-                normalized_unit = unit_map.get(unit_str, unit_str)
+            
+            normalized_unit = unit_map.get(unit_str, unit_str)
+            
+            if unit_str and normalized_unit:
+                result = f"{frac_str} {normalized_unit}".strip()
+            elif frac_str:
+                result = frac_str
+            else:
+                result = text
                 
-                if unit_str and normalized_unit:
-                    return f"{frac_str} {normalized_unit}".strip()
-                elif frac_str:
-                    return frac_str
+            return prefix + result
         except:
             pass
     
