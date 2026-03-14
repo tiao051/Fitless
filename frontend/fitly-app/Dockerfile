@@ -2,14 +2,14 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install Expo CLI globally
-RUN npm install -g expo-cli
+# Clear npm cache
+RUN npm cache clean --force
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies (suppress audit warnings)
+RUN npm install --audit=false
 
 # Copy app source
 COPY . .
@@ -18,5 +18,5 @@ COPY . .
 EXPOSE 19000
 EXPOSE 19001
 
-# Start Expo dev server
-CMD ["expo", "start", "--tunnel"]
+# Start Expo dev server in LAN mode (no interactive input needed)
+CMD ["npm", "start", "--silent", "--", "--lan"]

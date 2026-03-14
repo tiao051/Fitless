@@ -5,10 +5,49 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using dotenv.net;
 using System.Text;
+using Npgsql;
 
-// Load .env file from root directory
+// Load .env file from root directory if it exists (for local development)
 var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", ".env");
-DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { envPath }));
+if (File.Exists(envPath))
+{
+    DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { envPath }));
+}
+
+// Wait for database to be ready (Docker startup)
+var maxRetries = 30;
+var retryCount = 0;
+var database = Environment.GetEnvironmentVariable("DATABASE_NAME") ?? "fitly_db";
+var user = Environment.GetEnvironmentVariable("DATABASE_USER") ?? "fitly_user";
+var password = Environment.GetEnvironmentVariable("DATABASE_PASSWORD") ?? "fitly_password";
+var host = Environment.GetEnvironmentVariable("DATABASE_HOST") ?? "localhost";
+var port = Environment.GetEnvironmentVariable("DATABASE_PORT") ?? "5432";
+
+while (retryCount < maxRetries)
+{
+    try
+    {
+        var connString = $"Host={host};Port={port};Database=postgres;Username={user};Password={password};";
+        using (var conn = new NpgsqlConnection(connString))
+        {
+            await conn.OpenAsync();
+            conn.Close();
+        }
+        break;
+    }
+    catch (Exception)
+    {
+        retryCount++;
+        if (retryCount >= maxRetries)
+        {
+            Console.WriteLine("Warning: Max database retries reached. Continuing...");
+        }
+        else
+        {
+            await Task.Delay(1000);
+        }
+    }
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,18 +96,6 @@ builder.Configuration["Jwt:Audience"] = jwtAudience;
 builder.Configuration["Jwt:ExpirationMinutes"] = jwtExpirationMinutes.ToString();
 
 // Add DbContext with PostgreSQL
-// Environment variables are loaded from .env file (via DotNetEnv.Load())
-var host = Environment.GetEnvironmentVariable("DATABASE_HOST") 
-    ?? throw new InvalidOperationException("DATABASE_HOST is not configured");
-var port = Environment.GetEnvironmentVariable("DATABASE_PORT") 
-    ?? throw new InvalidOperationException("DATABASE_PORT is not configured");
-var database = Environment.GetEnvironmentVariable("DATABASE_NAME") 
-    ?? throw new InvalidOperationException("DATABASE_NAME is not configured");
-var user = Environment.GetEnvironmentVariable("DATABASE_USER") 
-    ?? throw new InvalidOperationException("DATABASE_USER is not configured");
-var password = Environment.GetEnvironmentVariable("DATABASE_PASSWORD") 
-    ?? throw new InvalidOperationException("DATABASE_PASSWORD is not configured");
-
 var connectionString = $"Server={host};Port={port};Database={database};User Id={user};Password={password};";
 
 builder.Services.AddDbContext<FitlyDbContext>(options =>
@@ -86,13 +113,10 @@ using (var scope = app.Services.CreateScope())
     try
     {
         // Apply pending migrations
-        logger.LogInformation("Applying database migrations...");
         await dbContext.Database.MigrateAsync();
-        logger.LogInformation("Migrations applied successfully");
 
         // Seed food data from CSV
         var csvPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "scripts", "data", "fitly_data.csv");
-        logger.LogInformation($"Seeding foods from: {csvPath}");
         await foodSeeder.SeedFoodsAsync(csvPath);
     }
     catch (Exception ex)
