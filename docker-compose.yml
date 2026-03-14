@@ -18,5 +18,45 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build:
+      context: ./backend/Fitly.API
+      dockerfile: Dockerfile
+    container_name: fitly-api
+    ports:
+      - "5062:5062"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: http://+:5062
+      ConnectionStrings__DefaultConnection: Server=postgres;Port=5432;Database=${DATABASE_NAME};User Id=${DATABASE_USER};Password=${DATABASE_PASSWORD};
+      JWT__Secret: ${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fitly-network
+
+  frontend:
+    build:
+      context: ./frontend/fitly-app
+      dockerfile: Dockerfile
+    container_name: fitly-app
+    ports:
+      - "19000:19000"
+      - "19001:19001"
+    environment:
+      REACT_NATIVE_PACKAGER_HOSTNAME: 192.168.64.1
+      EXPO_PUBLIC_API_URL: http://192.168.64.1:5062/api
+    depends_on:
+      - api
+    networks:
+      - fitly-network
+    volumes:
+      - ./frontend/fitly-app/src:/app/src
+
+networks:
+  fitly-network:
+    driver: bridge
+
 volumes:
   postgres_data:
