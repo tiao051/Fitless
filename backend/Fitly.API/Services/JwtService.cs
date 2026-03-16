@@ -34,11 +34,13 @@ namespace Fitly.API.Services
                 new Claim(ClaimTypes.Surname, user.LastName),
             };
 
+            var expirationMinutes = int.TryParse(jwtSettings["ExpirationMinutes"], out var minutes) ? minutes : 60;
+            
             var token = new JwtSecurityToken(
                 issuer: jwtSettings["Issuer"],
                 audience: jwtSettings["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(int.Parse(jwtSettings["ExpirationMinutes"]!)),
+                expires: DateTime.UtcNow.AddMinutes(expirationMinutes),
                 signingCredentials: credentials
             );
 

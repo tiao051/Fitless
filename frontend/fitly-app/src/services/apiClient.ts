@@ -1,35 +1,25 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 
 const getBaseUrl = () => {
-  // 1. Ưu tiên dùng biến môi trường nếu có (Dành cho Production/Specific IP)
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-
-  // 2. Tự động lấy IP của máy tính đang chạy Metro Bundler
-  // debuggerHost thường có dạng "172.17.8.212:8081"
-  const debuggerHost = Constants.expoConfig?.hostUri || Constants.experienceUrl || '';
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   
-  const ipAddress = debuggerHost.split(':')[0];
-
-  if (!ipAddress || ipAddress === 'localhost') {
-    // Nếu chạy máy ảo Android trên PC thì dùng 10.0.2.2
-    // Nếu vẫn không thấy thì dùng IP cứng của ông làm fallback
-    console.warn('[API] Không dò được IP, dùng IP cứng 172.17.8.212');
-    return 'http://172.17.8.212:5062/api';
+  if (!apiUrl || apiUrl.trim() === '') {
+    const errorMessage = '[API] EXPO_PUBLIC_API_URL is not configured in .env file';
+    console.error(errorMessage);
+    throw new Error(errorMessage);
   }
-
-  return `http://${ipAddress}:5062/api`;
+  
+  console.log(`[API] Using API URL: ${apiUrl}`);
+  return apiUrl;
 };
 
 const client = axios.create({
   baseURL: getBaseUrl(),
-  timeout: 15000, // Tăng lên 15s vì mạng Wifi đôi khi chậm
+  timeout: 15000, // Increase to 15s for WiFi stability
 });
 
-// Interceptor: Tự động đính Token vào mỗi Request
+// Interceptor: Automatically attach JWT token to requests
 client.interceptors.request.use(async (config) => {
   try {
     const token = await AsyncStorage.getItem('userToken');
@@ -37,7 +27,7 @@ client.interceptors.request.use(async (config) => {
       config.headers.Authorization = `Bearer ${token}`;
     }
   } catch (e) {
-    console.error('[API] Lỗi lấy token:', e);
+    console.error('[API] Error retrieving token:', e);
   }
   return config;
 });

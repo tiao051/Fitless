@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "setup:env": "node -e \"require('fs').copyFileSync('../../.env', '.env')\" && echo .env copied from root",
+    "start": "npm run setup:env && expo start",
+    "android": "npm run setup:env && expo start --android",
+    "ios": "npm run setup:env && expo start --ios",
+    "web": "npm run setup:env && expo start --web"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
