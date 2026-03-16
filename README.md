@@ -2,38 +2,70 @@
 
 A fitness tracking app for workouts and nutrition.
 
-## Core Features (MVP)
+## Quick Start
 
-- User authentication
-- Workout logging
-- Basic progress tracking
-- Simple nutrition tracking
+```bash
+# Terminal 1: Start backend
+docker-compose up -d --build
 
-- **Bảng xếp hạng (Leaderboard)**
-  - Xếp hạng theo Streak, Volume hoặc điểm số thử thách trong cộng đồng
+# Terminal 2: Start frontend
+cd frontend/fitly-app
+npm install
+npm start
+```
 
-- **Feed & Share**
-  - Nơi user chia sẻ ảnh tập luyện, công thức nấu ăn và kết quả cá nhân
+Then scan the QR code on your iPhone with Expo Go.
 
-### 5. Theo Dõi Tiến Độ (Progress Tracking)
+## Setup
 
-- **Body Transformation Time-lapse**
-  - Kho ảnh lưu trữ ảnh chụp cơ thể (Front/Side/Back)
-  - Tự động ghép các ảnh theo tuần/tháng thành video time-lapse để thấy sự thay đổi rõ rệt
+### Prerequisites
+- Node.js 18+ and npm
+- Docker & Docker Compose
+- Expo CLI
+- iPhone with Expo Go app
 
-- **Chỉ số cơ thể (Body Metrics)**
-  - Theo dõi Cân nặng, BMI, % Body Fat và số đo các vòng
+### Running Services
 
-### 6. Nền Tảng Cơ Bản (The Basics)
+```bash
+# Start Docker containers (PostgreSQL + API)
+docker-compose up -d --build
+docker-compose ps
+```
 
-- **Hệ thống tài khoản**
-  - Login/Signup (Google, Apple ID, Facebook, Email)
+Services:
+- **PostgreSQL**: port 5432
+- **.NET API**: port 5062
+- **Frontend (npm)**: port 8081
 
-- **Hệ thống Streak**
-  - Đếm ngày tập luyện liên tục để tạo động lực (như Duolingo)
+## Logs
 
-- **Thông báo (Smart Notifications)**
-  - Nhắc nhở giờ tập, giờ uống nước, giờ ăn dựa trên sinh hoạt của user
+All logs are written to your machine:
 
-- **Đồng bộ thiết bị đeo (Wearable Sync)**
-  - Kết nối với Apple Health, Google Fit, Garmin để lấy dữ liệu bước chân, nhịp tim và giấc ngủ
+- **API logs**: `backend/logs/api/app.log`
+- **Database logs**: `backend/logs/postgres/postgresql.log`
+- **Frontend logs**: Terminal when running `npm start`
+
+View logs:
+```bash
+# Windows PowerShell
+Get-Content backend/logs/api/app.log -Wait
+Get-Content backend/logs/postgres/postgresql.log -Wait
+
+# Linux/Mac
+tail -f backend/logs/api/app.log
+tail -f backend/logs/postgres/postgresql.log
+```
+
+## Stop Services
+
+```bash
+docker-compose down
+```
+
+## Features
+
+- User authentication with JWT
+- Workout logging and tracking
+- Nutrition tracking (1,636 pre-loaded foods)
+- Daily summary and progress tracking
+

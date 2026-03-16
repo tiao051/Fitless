@@ -6,6 +6,7 @@ obj/
 .vs/
 .vscode/
 appsettings.Development.json
+backend/logs/
 
 # React / Node
 node_modules/
