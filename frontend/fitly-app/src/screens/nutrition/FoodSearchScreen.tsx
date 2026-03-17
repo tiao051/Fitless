@@ -1,227 +1,207 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
   Text,
   TextInput,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
+  View,
 } from 'react-native';
 import { NutritionService, Food } from '../../services/nutritionService';
 
-export default function FoodSearchScreen() {
+export default function FoodSearchScreen({ navigation }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [foods, setFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    
-    if (query.trim() === '') {
-      setFoods([]);
-      setSearched(false);
-      return;
-    }
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      const query = searchQuery.trim();
 
-    setLoading(true);
-    setSearched(true);
-    try {
-      const results = await NutritionService.searchFoods(query);
-      setFoods(results);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to search foods');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (!query) {
+        setFoods([]);
+        setHasSearched(false);
+        setLoading(false);
+        return;
+      }
 
-  const renderFoodItem = ({ item }: { item: Food }) => (
-    <View style={styles.foodItem}>
-      <View style={styles.foodInfo}>
-        <Text style={styles.foodName}>{item.name}</Text>
-        {item.brand && <Text style={styles.foodBrand}>{item.brand}</Text>}
-        <View style={styles.servingInfo}>
-          {item.servingText && (
-            <Text style={styles.servingText}>{item.servingText}</Text>
-          )}
-          <Text style={styles.calPerServing}>
-            {item.caloriesPer100g.toFixed(0)} cal/100g
-          </Text>
-        </View>
-      </View>
-      <TouchableOpacity
-        style={styles.logButton}
-        onPress={() => {
-          Alert.alert('Log this food?', `${item.name} - ${item.caloriesPer100g.toFixed(0)} cal/100g`, [
-            { text: 'Cancel', onPress: () => {} },
-            {
-              text: 'Log',
-              onPress: () => {
-                // Will implement logging in next screen
-                Alert.alert('Food selected', `You selected ${item.name}`);
-              },
-            },
-          ]);
-        }}
-      >
-        <Text style={styles.logButtonText}>+</Text>
-      </TouchableOpacity>
-    </View>
-  );
+      setLoading(true);
+      setHasSearched(true);
+      try {
+        const results = await NutritionService.searchFoods(query);
+        setFoods(results);
+      } catch (error) {
+        console.error('Food search failed:', error);
+      } finally {
+        setLoading(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Search Foods</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.pageTitle}>Foods</Text>
+        <Text style={styles.pageSubtitle}>Search and add foods without using IDs.</Text>
 
-      <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by food name..."
+          placeholder="Search food name"
           value={searchQuery}
-          onChangeText={handleSearch}
-          placeholderTextColor="#999"
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#8D8E94"
         />
+
+        {loading ? (
+          <View style={styles.centerState}>
+            <ActivityIndicator size="large" color="#0E0E10" />
+          </View>
+        ) : (
+          <FlatList
+            data={foods}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              <View style={styles.centerState}>
+                <Text style={styles.emptyTitle}>
+                  {hasSearched ? 'No matching foods' : 'Start typing to find foods'}
+                </Text>
+                <Text style={styles.emptyText}>
+                  {hasSearched ? 'Try another keyword like chicken, rice, or yogurt.' : 'You can add a meal directly from results.'}
+                </Text>
+              </View>
+            }
+            renderItem={({ item }) => (
+              <View style={styles.foodCard}>
+                <View style={styles.foodInfo}>
+                  <Text style={styles.foodName}>{item.name}</Text>
+                  {item.brand ? <Text style={styles.foodBrand}>{item.brand}</Text> : null}
+                  <Text style={styles.foodNutrition}>
+                    {item.caloriesPer100g.toFixed(0)} kcal • P {item.proteinPer100g.toFixed(1)}g • C {item.carbsPer100g.toFixed(1)}g • F {item.fatPer100g.toFixed(1)}g
+                  </Text>
+                </View>
+
+                <Pressable
+                  style={styles.addButton}
+                  onPress={() => navigation.navigate('LogNutrition', { selectedFood: item })}
+                >
+                  <Text style={styles.addButtonText}>Add</Text>
+                </Pressable>
+              </View>
+            )}
+          />
+        )}
       </View>
-
-      {loading ? (
-        <View style={[styles.center, { flex: 1 }]}>
-          <ActivityIndicator size="large" color="#FF6B6B" />
-        </View>
-      ) : searched && foods.length === 0 ? (
-        <View style={[styles.center, { flex: 1 }]}>
-          <Text style={styles.emptyText}>No foods found</Text>
-          <Text style={styles.emptySubtext}>Try different search terms</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={foods}
-          renderItem={renderFoodItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-          scrollEnabled={true}
-        />
-      )}
-
-      {!searched && foods.length === 0 && (
-        <View style={[styles.center, { flex: 1 }]}>
-          <Text style={styles.placeholder}>Search for a food to get started</Text>
-        </View>
-      )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F5F5F7',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
-  center: {
-    justifyContent: 'center',
-    alignItems: 'center',
+  pageTitle: {
+    fontSize: 44,
+    lineHeight: 48,
+    fontWeight: '900',
+    color: '#0E0E10',
+    letterSpacing: -1,
   },
-  header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#333',
-  },
-  searchContainer: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+  pageSubtitle: {
+    marginTop: 4,
+    marginBottom: 18,
+    fontSize: 17,
+    color: '#8D8E94',
+    fontWeight: '500',
   },
   searchInput: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#333',
+    minHeight: 56,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#111',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    fontSize: 18,
+    color: '#0E0E10',
+    fontWeight: '500',
   },
   listContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 14,
+    paddingBottom: 22,
   },
-  foodItem: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginVertical: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  centerState: {
+    marginTop: 32,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 20,
+    color: '#0E0E10',
+    fontWeight: '700',
+  },
+  emptyText: {
+    marginTop: 4,
+    fontSize: 15,
+    color: '#8D8E94',
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  foodCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#111',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
   },
   foodInfo: {
     flex: 1,
-  },
-  foodName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  foodBrand: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 2,
-  },
-  servingInfo: {
-    flexDirection: 'row',
-    marginTop: 6,
-    alignItems: 'center',
-  },
-  servingText: {
-    fontSize: 12,
-    color: '#999',
     marginRight: 8,
   },
-  calPerServing: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FF6B6B',
+  foodName: {
+    fontSize: 18,
+    color: '#0E0E10',
+    fontWeight: '700',
   },
-  logButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FF6B6B',
-    justifyContent: 'center',
+  foodBrand: {
+    marginTop: 2,
+    fontSize: 13,
+    color: '#8D8E94',
+    fontWeight: '600',
+  },
+  foodNutrition: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#50525A',
+    fontWeight: '500',
+  },
+  addButton: {
+    minWidth: 72,
+    minHeight: 44,
+    borderRadius: 14,
     alignItems: 'center',
-    marginLeft: 12,
+    justifyContent: 'center',
+    backgroundColor: '#0E0E10',
   },
-  logButtonText: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '400',
-  },
-  placeholder: {
-    fontSize: 16,
-    color: '#999',
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 4,
+  addButtonText: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });

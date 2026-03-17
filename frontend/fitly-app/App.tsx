@@ -7,13 +7,14 @@ import { AuthContext } from './src/context/AuthContext';
 import { AuthService } from './src/services/authService';
 
 // Screens
-import LoginScreen from './src/screens/auth/LoginScreen';
-import RegisterScreen from './src/screens/auth/RegisterScreen';
-import HomeScreen from './src/screens/home/HomeScreen';
-import FoodSearchScreen from './src/screens/nutrition/FoodSearchScreen';
-import LogNutritionScreen from './src/screens/nutrition/LogNutritionScreen';
-import DailyNutritionScreen from './src/screens/nutrition/DailyNutritionScreen';
-import ProfileScreen from './src/screens/profile/ProfileScreen';
+import LoginScreen from './src/screens/auth/LoginScreen.tsx';
+import RegisterScreen from './src/screens/auth/RegisterScreen.tsx';
+import WelcomeScreen from './src/screens/auth/WelcomeScreen.tsx';
+import OnboardingScreen from './src/screens/auth/OnboardingScreen.tsx';
+import HomeScreen from './src/screens/home/HomeScreen.tsx';
+import FoodSearchScreen from './src/screens/nutrition/FoodSearchScreen.tsx';
+import LogNutritionScreen from './src/screens/nutrition/LogNutritionScreen.tsx';
+import ProfileScreen from './src/screens/profile/ProfileScreen.tsx';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -23,40 +24,45 @@ function LoggedInTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: true,
-        tabBarActiveTintColor: '#FF6B6B',
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: '#0E0E10',
+        tabBarInactiveTintColor: '#8D8E94',
+        tabBarStyle: {
+          borderTopColor: '#E6E6EA',
+          backgroundColor: '#F5F5F7',
+        },
+        headerStyle: {
+          backgroundColor: '#F5F5F7',
+          shadowColor: 'transparent',
+          elevation: 0,
+        },
+        headerTitleStyle: {
+          fontWeight: '800',
+          color: '#0E0E10',
+        },
       }}
     >
       <Tab.Screen 
         name="Home" 
         component={HomeScreen}
         options={{
-          title: 'Dashboard',
-          tabBarLabel: 'Home',
-        }}
-      />
-      <Tab.Screen 
-        name="FoodSearch" 
-        component={FoodSearchScreen}
-        options={{
-          title: 'Search Foods',
-          tabBarLabel: 'Search',
+          title: 'Today',
+          tabBarLabel: 'Today',
         }}
       />
       <Tab.Screen 
         name="LogNutrition" 
         component={LogNutritionScreen}
         options={{
-          title: 'Log Meal',
-          tabBarLabel: 'Log',
+          title: 'Add Meal',
+          tabBarLabel: 'Add',
         }}
       />
       <Tab.Screen 
-        name="DailySummary" 
-        component={DailyNutritionScreen}
+        name="FoodSearch" 
+        component={FoodSearchScreen}
         options={{
-          title: 'Today',
-          tabBarLabel: 'Summary',
+          title: 'Foods',
+          tabBarLabel: 'Foods',
         }}
       />
       <Tab.Screen 
@@ -158,6 +164,8 @@ export default function App() {
         >
           {state.userToken == null ? (
             <Stack.Group screenOptions={{ animationEnabled: false }}>
+              <Stack.Screen name="Welcome" component={WelcomeScreen} />
+              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
               <Stack.Screen name="Login" component={LoginScreen} />
               <Stack.Screen name="Register" component={RegisterScreen} />
             </Stack.Group>

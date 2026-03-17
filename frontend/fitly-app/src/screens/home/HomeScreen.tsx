@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NutritionService, DailyNutritionSummary } from '../../services/nutritionService';
@@ -13,46 +15,34 @@ import { NutritionService, DailyNutritionSummary } from '../../services/nutritio
 export default function HomeScreen({ navigation }: any) {
   const [todaySummary, setTodaySummary] = useState<DailyNutritionSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = useCallback(async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const userIdStr = await AsyncStorage.getItem('userId');
+      if (userIdStr) {
+        const summary = await NutritionService.getDailySummary(parseInt(userIdStr, 10), today);
+        setTodaySummary(summary);
+      }
+    } catch (error) {
+      console.error('Error loading daily summary:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        const userIdStr = await AsyncStorage.getItem('userId');
-        if (userIdStr) {
-          const summary = await NutritionService.getDailySummary(parseInt(userIdStr, 10), today);
-          setTodaySummary(summary);
-        }
-      } catch (error) {
-        console.error('Error loading daily summary:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     const unsubscribe = navigation.addListener('focus', () => {
+      setLoading(true);
       loadData();
     });
 
     loadData();
+
     return unsubscribe;
-  }, [navigation]);
-
-  const renderNutritionCard = (label: string, value: number, unit: string) => (
-    <View style={styles.card}>
-      <Text style={styles.cardLabel}>{label}</Text>
-      <Text style={styles.cardValue}>{value.toFixed(1)}</Text>
-      <Text style={styles.cardUnit}>{unit}</Text>
-    </View>
-  );
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#FF6B6B" />
-      </View>
-    );
-  }
+  }, [loadData, navigation]);
 
   const nutrition = todaySummary?.totalNutrition || {
     calories: 0,
@@ -61,193 +51,242 @@ export default function HomeScreen({ navigation }: any) {
     fat: 0,
   };
 
+  const dateLabel = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.safeArea, styles.center]}>
+        <ActivityIndicator size="large" color="#0E0E10" />
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Today's Summary</Text>
-        <Text style={styles.date}>{new Date().toLocaleDateString()}</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {
+          setRefreshing(true);
+          loadData();
+        }} />}
+      >
+        <Text style={styles.pageTitle}>Today</Text>
+        <Text style={styles.pageSubtitle}>{dateLabel}</Text>
 
-      <View style={styles.nutritionGrid}>
-        {renderNutritionCard('Calories', nutrition.calories, 'kcal')}
-        {renderNutritionCard('Protein', nutrition.protein, 'g')}
-        {renderNutritionCard('Carbs', nutrition.carbs, 'g')}
-        {renderNutritionCard('Fat', nutrition.fat, 'g')}
-      </View>
+        <View style={styles.metricsGrid}>
+          <MetricCard label="Calories" value={nutrition.calories.toFixed(0)} unit="kcal" />
+          <MetricCard label="Protein" value={nutrition.protein.toFixed(1)} unit="g" />
+          <MetricCard label="Carbs" value={nutrition.carbs.toFixed(1)} unit="g" />
+          <MetricCard label="Fat" value={nutrition.fat.toFixed(1)} unit="g" />
+        </View>
 
-      <View style={styles.mealsSection}>
-        <Text style={styles.sectionTitle}>Meals Logged</Text>
-        {todaySummary && todaySummary.meals && todaySummary.meals.length > 0 ? (
-          todaySummary.meals.map((meal: any) => (
-            <View key={meal.id} style={styles.mealItem}>
-              <View style={styles.mealInfo}>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Meals</Text>
+          <Pressable onPress={() => navigation.navigate('LogNutrition')}>
+            <Text style={styles.sectionLink}>Add</Text>
+          </Pressable>
+        </View>
+
+        {todaySummary?.meals?.length ? (
+          todaySummary.meals.map((meal) => (
+            <View key={meal.id} style={styles.mealCard}>
+              <View>
                 <Text style={styles.mealName}>{meal.food.name}</Text>
-                <Text style={styles.mealType}>{meal.meal}</Text>
+                <Text style={styles.mealMeta}>{meal.meal} • {meal.quantity} g</Text>
               </View>
-              <View style={styles.mealNutrition}>
-                <Text style={styles.mealNutritionText}>
-                  {meal.nutrition.calories.toFixed(0)} cal
-                </Text>
-              </View>
+              <Text style={styles.mealCalories}>{meal.nutrition.calories.toFixed(0)} kcal</Text>
             </View>
           ))
         ) : (
-          <Text style={styles.noMeals}>No meals logged yet</Text>
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>No meals logged yet</Text>
+            <Text style={styles.emptyText}>Tap Add to log your first meal for today.</Text>
+          </View>
         )}
-      </View>
 
-      <TouchableOpacity
-        style={styles.primaryButton}
-        onPress={() => navigation.navigate('LogNutrition')}
-      >
-        <Text style={styles.primaryButtonText}>+ Log Meal</Text>
-      </TouchableOpacity>
+        <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('LogNutrition')}>
+          <Text style={styles.primaryButtonText}>Add meal</Text>
+        </Pressable>
 
-      <TouchableOpacity
-        style={styles.secondaryButton}
-        onPress={() => navigation.navigate('FoodSearch')}
-      >
-        <Text style={styles.secondaryButtonText}>Search Foods</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FoodSearch')}>
+          <Text style={styles.secondaryButtonText}>Browse foods</Text>
+        </Pressable>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function MetricCard({ label, value, unit }: { label: string; value: string; unit: string }) {
+  return (
+    <View style={styles.metricCard}>
+      <Text style={styles.metricLabel}>{label}</Text>
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricUnit}>{unit}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F5F5F7',
   },
   center: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#333',
+  pageTitle: {
+    fontSize: 44,
+    lineHeight: 48,
+    fontWeight: '900',
+    color: '#0E0E10',
+    letterSpacing: -1,
   },
-  date: {
-    fontSize: 14,
-    color: '#999',
+  pageSubtitle: {
     marginTop: 4,
-  },
-  nutritionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 12,
-  },
-  card: {
-    width: '48%',
-    backgroundColor: '#fff',
-    margin: '1%',
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF6B6B',
-  },
-  cardLabel: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 8,
+    marginBottom: 18,
+    fontSize: 17,
+    color: '#8D8E94',
     fontWeight: '500',
   },
-  cardValue: {
-    fontSize: 28,
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  metricCard: {
+    width: '48.5%',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#101012',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 10,
+  },
+  metricLabel: {
+    fontSize: 14,
+    color: '#8D8E94',
     fontWeight: '700',
-    color: '#333',
   },
-  cardUnit: {
-    fontSize: 11,
-    color: '#999',
-    marginTop: 4,
+  metricValue: {
+    marginTop: 8,
+    fontSize: 30,
+    lineHeight: 34,
+    color: '#0E0E10',
+    fontWeight: '900',
   },
-  mealsSection: {
-    backgroundColor: '#fff',
-    marginHorizontal: 12,
-    marginVertical: 12,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
+  metricUnit: {
+    marginTop: 2,
+    fontSize: 13,
+    color: '#8D8E94',
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
   },
-  mealItem: {
+  sectionHeaderRow: {
+    marginTop: 18,
+    marginBottom: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
-  mealInfo: {
-    flex: 1,
+  sectionTitle: {
+    fontSize: 26,
+    lineHeight: 30,
+    color: '#0E0E10',
+    fontWeight: '800',
+  },
+  sectionLink: {
+    fontSize: 18,
+    color: '#0E0E10',
+    textDecorationLine: 'underline',
+    fontWeight: '600',
+  },
+  mealCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#101012',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   mealName: {
+    fontSize: 18,
+    color: '#0E0E10',
+    fontWeight: '700',
+    maxWidth: 240,
+  },
+  mealMeta: {
+    marginTop: 4,
     fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    color: '#8D8E94',
+    fontWeight: '500',
   },
-  mealType: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 2,
+  mealCalories: {
+    fontSize: 16,
+    color: '#0E0E10',
+    fontWeight: '700',
   },
-  mealNutrition: {
-    alignItems: 'flex-end',
+  emptyCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#101012',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginBottom: 10,
   },
-  mealNutritionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF6B6B',
+  emptyTitle: {
+    fontSize: 18,
+    color: '#0E0E10',
+    fontWeight: '700',
   },
-  noMeals: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    paddingVertical: 12,
+  emptyText: {
+    marginTop: 4,
+    fontSize: 15,
+    color: '#8D8E94',
   },
   primaryButton: {
-    backgroundColor: '#FF6B6B',
-    marginHorizontal: 16,
-    marginVertical: 8,
-    paddingVertical: 14,
-    borderRadius: 8,
+    marginTop: 12,
+    minHeight: 60,
+    borderRadius: 30,
+    backgroundColor: '#0E0E10',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 24,
+    lineHeight: 28,
+    fontWeight: '800',
+    letterSpacing: -0.4,
   },
   secondaryButton: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginVertical: 8,
-    paddingVertical: 14,
-    borderRadius: 8,
+    marginTop: 10,
+    minHeight: 58,
+    borderRadius: 28,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#101012',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FF6B6B',
-    marginBottom: 20,
+    justifyContent: 'center',
   },
   secondaryButtonText: {
-    color: '#FF6B6B',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#0E0E10',
+    fontSize: 21,
+    lineHeight: 26,
+    fontWeight: '700',
   },
 });

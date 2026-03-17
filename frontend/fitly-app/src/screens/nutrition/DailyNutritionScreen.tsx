@@ -1,49 +1,82 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-} from 'react-native';
+import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
-export default function DailyNutritionScreen() {
+export default function DailyNutritionScreen({ navigation }: any) {
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Daily Summary</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Summary</Text>
+        <Text style={styles.subtitle}>Daily nutrition is now shown on the Today tab for a simpler flow.</Text>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Where to check your progress</Text>
+          <Text style={styles.cardText}>Open Today to see calories, macros, and all logged meals in one place.</Text>
+        </View>
+
+        <Pressable style={styles.button} onPress={() => navigation.navigate('Home')}>
+          <Text style={styles.buttonText}>Go to Today</Text>
+        </Pressable>
       </View>
-      <View style={styles.placeholder}>
-        <Text style={styles.placeholderText}>
-          Daily summary is shown on the Home tab
-        </Text>
-      </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F5F5F7',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    paddingHorizontal: 20,
+    paddingTop: 14,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#333',
+    fontSize: 44,
+    lineHeight: 48,
+    fontWeight: '900',
+    color: '#0E0E10',
+    letterSpacing: -1,
   },
-  placeholder: {
-    flex: 1,
-    justifyContent: 'center',
+  subtitle: {
+    marginTop: 6,
+    fontSize: 17,
+    lineHeight: 24,
+    color: '#8D8E94',
+    fontWeight: '500',
+  },
+  card: {
+    marginTop: 20,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: '#111',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  cardTitle: {
+    fontSize: 20,
+    color: '#0E0E10',
+    fontWeight: '800',
+  },
+  cardText: {
+    marginTop: 6,
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#4F515A',
+    fontWeight: '500',
+  },
+  button: {
+    marginTop: 14,
+    minHeight: 60,
+    borderRadius: 30,
+    backgroundColor: '#0E0E10',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  placeholderText: {
-    fontSize: 16,
-    color: '#999',
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: '800',
   },
 });

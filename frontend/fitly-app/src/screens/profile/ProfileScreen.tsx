@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
   ActivityIndicator,
+  Alert,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
@@ -35,10 +36,11 @@ export default function ProfileScreen() {
   }, []);
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', onPress: () => {} },
+    Alert.alert('Sign out', 'Do you want to sign out from Fitly?', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Logout',
+        text: 'Sign out',
+        style: 'destructive',
         onPress: async () => {
           await auth.signOut();
         },
@@ -48,163 +50,153 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#FF6B6B" />
-      </View>
+      <SafeAreaView style={[styles.safeArea, styles.center]}>
+        <ActivityIndicator size="large" color="#0E0E10" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!user) {
+    return (
+      <SafeAreaView style={[styles.safeArea, styles.center]}>
+        <Text style={styles.emptyTitle}>Profile is unavailable</Text>
+        <Text style={styles.emptyText}>Please sign in again to continue.</Text>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Profile</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.pageTitle}>Profile</Text>
 
-      {user && (
-        <View style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
+        <View style={styles.card}>
+          <View style={styles.avatarWrap}>
             <Text style={styles.avatarText}>
-              {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+              {user.firstName.charAt(0)}
+              {user.lastName.charAt(0)}
             </Text>
           </View>
 
-          <Text style={styles.fullName}>
+          <Text style={styles.name}>
             {user.firstName} {user.lastName}
           </Text>
           <Text style={styles.email}>{user.email}</Text>
 
-          <View style={styles.infoSection}>
-            <Text style={styles.infoLabel}>Member Since</Text>
-            <Text style={styles.infoValue}>
-              {new Date(user.createdAt).toLocaleDateString()}
-            </Text>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>Member since</Text>
+            <Text style={styles.metaValue}>{new Date(user.createdAt).toLocaleDateString()}</Text>
           </View>
         </View>
-      )}
 
-      <View style={styles.actionsSection}>
-        <TouchableOpacity style={styles.actionButton} disabled>
-          <Text style={styles.actionButtonText}>Settings</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton} disabled>
-          <Text style={styles.actionButtonText}>Privacy Policy</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton} disabled>
-          <Text style={styles.actionButtonText}>Help & Support</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.logoutButton]}
-          onPress={handleLogout}
-        >
-          <Text style={styles.logoutButtonText}>Logout</Text>
-        </TouchableOpacity>
+        <Pressable style={styles.signOutButton} onPress={handleLogout}>
+          <Text style={styles.signOutButtonText}>Sign out</Text>
+        </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F5F5F7',
   },
   center: {
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#333',
+  pageTitle: {
+    fontSize: 44,
+    lineHeight: 48,
+    fontWeight: '900',
+    color: '#0E0E10',
+    letterSpacing: -1,
+    marginBottom: 18,
   },
-  profileCard: {
-    backgroundColor: '#fff',
-    marginHorizontal: 12,
-    marginVertical: 16,
-    borderRadius: 12,
-    paddingVertical: 24,
+  card: {
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#111',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+  },
+  avatarWrap: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    borderWidth: 2,
+    borderColor: '#111',
     alignItems: 'center',
-  },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FF6B6B',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+    backgroundColor: '#F5F5F7',
   },
   avatarText: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#0E0E10',
   },
-  fullName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 4,
+  name: {
+    marginTop: 14,
+    fontSize: 30,
+    lineHeight: 34,
+    fontWeight: '800',
+    color: '#0E0E10',
   },
   email: {
-    fontSize: 14,
-    color: '#999',
-    marginBottom: 20,
-  },
-  infoSection: {
-    alignItems: 'center',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  actionsSection: {
-    marginHorizontal: 12,
-    marginVertical: 12,
-  },
-  actionButton: {
-    backgroundColor: '#fff',
-    marginHorizontal: 12,
-    marginVertical: 6,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  actionButtonText: {
-    fontSize: 16,
+    marginTop: 4,
+    fontSize: 17,
+    color: '#8D8E94',
     fontWeight: '500',
-    color: '#333',
   },
-  logoutButton: {
-    backgroundColor: '#FFF3F3',
-    borderBottomWidth: 0,
-    marginTop: 16,
+  metaRow: {
+    marginTop: 18,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#E3E3E8',
+    paddingTop: 14,
   },
-  logoutButtonText: {
-    fontSize: 16,
+  metaLabel: {
+    fontSize: 15,
+    color: '#8D8E94',
     fontWeight: '600',
-    color: '#FF6B6B',
+  },
+  metaValue: {
+    fontSize: 15,
+    color: '#0E0E10',
+    fontWeight: '700',
+  },
+  signOutButton: {
+    marginTop: 14,
+    minHeight: 58,
+    borderRadius: 29,
+    backgroundColor: '#0E0E10',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  signOutButtonText: {
+    fontSize: 22,
+    lineHeight: 26,
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0E0E10',
+  },
+  emptyText: {
+    marginTop: 6,
+    fontSize: 16,
+    color: '#8D8E94',
     textAlign: 'center',
   },
 });
