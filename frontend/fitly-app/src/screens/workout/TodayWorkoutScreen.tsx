@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type PlannedExercise = {
@@ -37,10 +38,14 @@ export default function TodayWorkoutScreen({ navigation }: any) {
   const [exercises, setExercises] = useState<ExerciseLog[]>([]);
   const [expandedExerciseId, setExpandedExerciseId] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
+  const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
+
+  const getTodayDateKey = () => new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
     const loadTodayPlan = async () => {
       try {
+        const dateKey = getTodayDateKey();
         const plan = await AsyncStorage.getItem('weeklyPlan');
         if (plan) {
           const weekPlan = JSON.parse(plan);
@@ -53,8 +58,16 @@ export default function TodayWorkoutScreen({ navigation }: any) {
             ...ex,
             completedSets: [],
           }));
-          
-          setExercises(logs);
+
+          const savedLog = await AsyncStorage.getItem(`workoutLog:${dateKey}`);
+          if (savedLog) {
+            const parsed = JSON.parse(savedLog);
+            setExercises(Array.isArray(parsed.exercises) ? parsed.exercises : logs);
+            setNotes(typeof parsed.notes === 'string' ? parsed.notes : '');
+            setIsWorkoutCompleted(Boolean(parsed.isCompleted));
+          } else {
+            setExercises(logs);
+          }
         }
       } catch (error) {
         console.error('Error loading today plan:', error);
@@ -123,6 +136,41 @@ export default function TodayWorkoutScreen({ navigation }: any) {
     return allCompleted ? '#0E8B2A' : '#F39C12';
   };
 
+  const saveWorkoutProgress = async (completedOverride?: boolean) => {
+    try {
+      const isCompleted = completedOverride ?? isWorkoutCompleted;
+      const payload = {
+        date: getTodayDateKey(),
+        isCompleted,
+        notes,
+        exercises,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await AsyncStorage.setItem(`workoutLog:${payload.date}`, JSON.stringify(payload));
+      setIsWorkoutCompleted(isCompleted);
+      return true;
+    } catch (error) {
+      console.error('Error saving workout progress:', error);
+      Alert.alert('Error', 'Failed to save workout progress');
+      return false;
+    }
+  };
+
+  const onSaveWorkout = async () => {
+    const success = await saveWorkoutProgress();
+    if (success) {
+      Alert.alert('Saved', 'Workout progress saved successfully');
+    }
+  };
+
+  const onToggleCompleted = async () => {
+    const success = await saveWorkoutProgress(!isWorkoutCompleted);
+    if (success) {
+      Alert.alert('Updated', !isWorkoutCompleted ? 'Marked as completed for today' : 'Marked as not completed');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -132,6 +180,22 @@ export default function TodayWorkoutScreen({ navigation }: any) {
 
         <Text style={styles.pageTitle}>Today's Workout</Text>
         <Text style={styles.pageSubtitle}>{new Date().toLocaleDateString()}</Text>
+
+        {exercises.length > 0 && (
+          <Pressable
+            style={[styles.completionToggle, isWorkoutCompleted && styles.completionToggleActive]}
+            onPress={onToggleCompleted}
+          >
+            <Text
+              style={[
+                styles.completionToggleText,
+                isWorkoutCompleted && styles.completionToggleTextActive,
+              ]}
+            >
+              {isWorkoutCompleted ? '✓ Completed today' : '○ Mark as completed today'}
+            </Text>
+          </Pressable>
+        )}
 
         {/* Exercises List */}
         {exercises.length > 0 ? (
@@ -224,7 +288,7 @@ export default function TodayWorkoutScreen({ navigation }: any) {
 
         {/* Save Button */}
         {exercises.length > 0 && (
-          <Pressable style={styles.saveButton}>
+          <Pressable style={styles.saveButton} onPress={onSaveWorkout}>
             <Text style={styles.saveButtonText}>Save Workout</Text>
           </Pressable>
         )}
@@ -262,6 +326,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#8D8E94',
     fontWeight: '500',
+  },
+  completionToggle: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#E5E5EA',
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+    marginBottom: 14,
+  },
+  completionToggleActive: {
+    backgroundColor: '#0E8B2A',
+    borderColor: '#0E8B2A',
+  },
+  completionToggleText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0E0E10',
+  },
+  completionToggleTextActive: {
+    color: '#FFFFFF',
   },
   /* Exercise Card */
   exerciseCard: {
