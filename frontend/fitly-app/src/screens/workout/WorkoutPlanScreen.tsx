@@ -79,27 +79,43 @@ export default function WorkoutPlanScreen({ navigation }: any) {
           {weekPlan.map((dayPlan, index) => {
             const isToday = dayPlan.day === today;
             const exerciseCount = dayPlan.exercises.length;
+            const isPlanned = dayPlan.isRestDay || exerciseCount > 0;
 
             return (
               <Pressable
                 key={dayPlan.day}
                 style={[
                   styles.dayCard,
+                  isPlanned ? styles.dayCardPlanned : styles.dayCardUnplanned,
                   isToday && styles.dayCardToday,
-                  dayPlan.isRestDay && styles.dayCardRest,
                 ]}
                 onPress={() => navigation.navigate('EditDayPlan', { dayIndex: index })}
               >
-                <Text style={[styles.dayLabel, isToday && styles.dayLabelToday]}>
+                <Text
+                  style={[
+                    styles.dayLabel,
+                    isPlanned && styles.dayLabelOnDark,
+                    !isPlanned && styles.dayLabelOnLight,
+                  ]}
+                  numberOfLines={1}
+                >
                   {dayPlan.day.slice(0, 3)}
                 </Text>
                 {dayPlan.isRestDay ? (
-                  <Text style={[styles.dayStatus, isToday && styles.dayStatusToday]}>Rest</Text>
-                ) : (
-                  <Text style={[styles.dayStatus, isToday && styles.dayStatusToday]}>
-                    {exerciseCount > 0 ? `${exerciseCount} ex` : 'Empty'}
+                  <Text
+                    style={[styles.dayStatus, isPlanned && styles.dayStatusOnDark]}
+                    numberOfLines={1}
+                  >
+                    Rest
                   </Text>
-                )}
+                ) : exerciseCount > 0 ? (
+                  <Text
+                    style={[styles.dayStatus, isPlanned && styles.dayStatusOnDark]}
+                    numberOfLines={1}
+                  >
+                    {`${exerciseCount} ex`}
+                  </Text>
+                ) : null}
               </Pressable>
             );
           })}
@@ -192,43 +208,50 @@ const styles = StyleSheet.create({
   weekGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     marginBottom: 28,
-    gap: 8,
+    rowGap: 8,
   },
   dayCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
+    width: '23%',
     borderWidth: 2,
-    borderColor: '#E5E5EA',
+    borderColor: '#D7D7DC',
     borderRadius: 16,
     paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
+    minHeight: 68,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayCardToday: {
+  dayCardPlanned: {
     backgroundColor: '#0E0E10',
     borderColor: '#0E0E10',
   },
-  dayCardRest: {
-    backgroundColor: '#F0F0F3',
-    borderColor: '#E5E5EA',
+  dayCardUnplanned: {
+    backgroundColor: '#EFEFF3',
+    borderColor: '#DBDBE0',
+  },
+  dayCardToday: {
+    borderColor: '#0E0E10',
+    borderWidth: 2,
   },
   dayLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#8D8E94',
     marginBottom: 4,
   },
-  dayLabelToday: {
+  dayLabelOnDark: {
     color: '#FFFFFF',
   },
-  dayStatus: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#0E0E10',
+  dayLabelOnLight: {
+    color: '#6D6E74',
   },
-  dayStatusToday: {
+  dayStatus: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6D6E74',
+  },
+  dayStatusOnDark: {
     color: '#FFFFFF',
   },
   /* Today Section */

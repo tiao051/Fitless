@@ -32,6 +32,8 @@ type DayPlan = {
   day: string;
   exercises: PlannedExercise[];
   isRestDay: boolean;
+  dayType?: 'unset' | 'training' | 'rest' | 'cardio' | 'custom';
+  customPlanLabel?: string;
 };
 
 export default function EditWeeklyPlanScreen({ route, navigation }: any) {
@@ -40,6 +42,7 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddExercise, setShowAddExercise] = useState(false);
+  const [showDayTypeSelector, setShowDayTypeSelector] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [newSets, setNewSets] = useState('3');
   const [newReps, setNewReps] = useState('8');
@@ -54,12 +57,30 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
         const plan = await AsyncStorage.getItem('weeklyPlan');
         if (plan) {
           const weekPlan = JSON.parse(plan);
-          setCurrentPlan(weekPlan[dayIndex]);
+          const dayPlan = weekPlan[dayIndex];
+          if (dayPlan) {
+            const inferredDayType = dayPlan.dayType || (dayPlan.isRestDay ? 'rest' : dayPlan.exercises?.length > 0 ? 'training' : 'unset');
+            setCurrentPlan({
+              ...dayPlan,
+              dayType: inferredDayType,
+              customPlanLabel: dayPlan.customPlanLabel || '',
+            });
+          } else {
+            setCurrentPlan({
+              day: days[dayIndex],
+              exercises: [],
+              isRestDay: false,
+              dayType: 'unset',
+              customPlanLabel: '',
+            });
+          }
         } else {
           setCurrentPlan({
             day: days[dayIndex],
             exercises: [],
             isRestDay: false,
+            dayType: 'unset',
+            customPlanLabel: '',
           });
         }
 
@@ -128,14 +149,40 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
     setCurrentPlan(updated);
   };
 
-  const toggleRestDay = () => {
+  const setDayType = (dayType: 'training' | 'rest' | 'cardio' | 'custom') => {
     const updated = { ...currentPlan };
-    updated.isRestDay = !updated.isRestDay;
-    if (updated.isRestDay) {
+    updated.dayType = dayType;
+    updated.isRestDay = dayType === 'rest';
+
+    if (dayType === 'rest') {
       updated.exercises = [];
     }
+
+    if (dayType !== 'custom') {
+      updated.customPlanLabel = '';
+    }
+
     setCurrentPlan(updated);
+    setShowDayTypeSelector(false);
   };
+
+  const getDayTypeLabel = () => {
+    if (!currentPlan.dayType || currentPlan.dayType === 'unset') {
+      return 'Tap to choose day setup';
+    }
+
+    if (currentPlan.dayType === 'rest') return '😴 Rest Day';
+    if (currentPlan.dayType === 'training') return '🏋️ Training Day';
+    if (currentPlan.dayType === 'cardio') return '🏃 Cardio';
+
+    if (currentPlan.customPlanLabel?.trim()) {
+      return `🛠️ ${currentPlan.customPlanLabel.trim()}`;
+    }
+
+    return '🛠️ Plan it by your own';
+  };
+
+  const isSetupSelected = !!currentPlan.dayType && currentPlan.dayType !== 'unset';
 
   const savePlan = async () => {
     try {
@@ -164,17 +211,31 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
         <Text style={styles.pageTitle}>{currentPlan.day}</Text>
         <Text style={styles.pageSubtitle}>Plan your workout</Text>
 
-        {/* Rest Day Toggle */}
+        {/* Day Setup Selector */}
+        <Text style={styles.setupLabel}>Day setup</Text>
         <Pressable
-          style={[styles.restDayToggle, currentPlan.isRestDay && styles.restDayToggleActive]}
-          onPress={toggleRestDay}
+          style={[styles.daySetupSelector, isSetupSelected && styles.daySetupSelectorActive]}
+          onPress={() => setShowDayTypeSelector(true)}
         >
-          <Text style={styles.restDayToggleText}>
-            {currentPlan.isRestDay ? '😴 Rest Day' : 'Training Day'}
+          <Text style={[styles.daySetupText, isSetupSelected && styles.daySetupTextActive]}>
+            {getDayTypeLabel()}
           </Text>
+          <Text style={[styles.daySetupChevron, isSetupSelected && styles.daySetupTextActive]}>▾</Text>
         </Pressable>
 
-        {!currentPlan.isRestDay && (
+        {currentPlan.dayType === 'custom' && (
+          <View style={styles.customPlanSection}>
+            <Text style={styles.fieldLabel}>Plan it by your own</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Mobility + Breathwork"
+              value={currentPlan.customPlanLabel || ''}
+              onChangeText={(text) => setCurrentPlan({ ...currentPlan, customPlanLabel: text })}
+            />
+          </View>
+        )}
+
+        {!currentPlan.isRestDay && isSetupSelected && (
           <>
             {/* Exercises List */}
             <View>
@@ -217,6 +278,28 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
           <Text style={styles.saveButtonText}>Save Plan</Text>
         </Pressable>
       </ScrollView>
+
+      <Modal visible={showDayTypeSelector} animationType="fade" transparent>
+        <SafeAreaView style={styles.selectModalBackdrop}>
+          <Pressable style={styles.selectModalOverlay} onPress={() => setShowDayTypeSelector(false)} />
+          <View style={styles.selectModalCard}>
+            <Text style={styles.selectModalTitle}>Choose day setup</Text>
+
+            <Pressable style={styles.selectItem} onPress={() => setDayType('rest')}>
+              <Text style={styles.selectItemText}>😴 Rest day</Text>
+            </Pressable>
+            <Pressable style={styles.selectItem} onPress={() => setDayType('training')}>
+              <Text style={styles.selectItemText}>🏋️ Training day</Text>
+            </Pressable>
+            <Pressable style={styles.selectItem} onPress={() => setDayType('cardio')}>
+              <Text style={styles.selectItemText}>🏃 Cardio</Text>
+            </Pressable>
+            <Pressable style={styles.selectItem} onPress={() => setDayType('custom')}>
+              <Text style={styles.selectItemText}>🛠️ Plan it by your own</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </Modal>
 
       {/* Add Exercise Modal */}
       <Modal visible={showAddExercise} animationType="slide" transparent>
@@ -339,7 +422,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 20,
   },
-  restDayToggle: {
+  setupLabel: {
+    fontSize: 13,
+    color: '#8D8E94',
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  daySetupSelector: {
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#E5E5EA',
@@ -347,16 +436,29 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     alignItems: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
     marginBottom: 24,
   },
-  restDayToggleActive: {
+  daySetupSelectorActive: {
     backgroundColor: '#0E0E10',
     borderColor: '#0E0E10',
   },
-  restDayToggleText: {
+  daySetupText: {
     fontSize: 16,
     fontWeight: '700',
     color: '#0E0E10',
+  },
+  daySetupTextActive: {
+    color: '#FFFFFF',
+  },
+  daySetupChevron: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#8D8E94',
+  },
+  customPlanSection: {
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
@@ -431,6 +533,44 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '800',
+  },
+  selectModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    justifyContent: 'flex-end',
+  },
+  selectModalOverlay: {
+    flex: 1,
+  },
+  selectModalCard: {
+    backgroundColor: '#F5F5F7',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 28,
+    borderTopWidth: 2,
+    borderColor: '#0E0E10',
+  },
+  selectModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0E0E10',
+    marginBottom: 12,
+  },
+  selectItem: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#E5E5EA',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+  },
+  selectItemText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0E0E10',
   },
   /* Modal Styles */
   modalContainer: {
