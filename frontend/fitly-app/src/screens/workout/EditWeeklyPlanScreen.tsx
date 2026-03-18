@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExerciseService, Exercise as ExerciseApiItem } from '../../services/exerciseService';
+import { WorkoutStateCard } from '../../components/workout/WorkoutStateCard';
 
 type Exercise = ExerciseApiItem;
 
@@ -139,22 +139,32 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
 
   if (loading || !currentPlan) {
     return (
-      <SafeAreaView style={[styles.safeArea, styles.center]}>
-        <ActivityIndicator size="large" color="#0E0E10" />
-        <Text style={styles.loadingText}>Loading workout day...</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.center}>
+          <WorkoutStateCard
+            variant="loading"
+            title="Loading workout day..."
+            layout="full"
+            testID="edit-workout-loading"
+          />
+        </View>
       </SafeAreaView>
     );
   }
 
   if (loadError) {
     return (
-      <SafeAreaView style={[styles.safeArea, styles.center]}>
-        <View style={styles.stateCard}>
-          <Text style={styles.stateTitle}>Could not load workout day</Text>
-          <Text style={styles.stateMessage}>{loadError}</Text>
-          <Pressable style={styles.stateButton} onPress={loadData}>
-            <Text style={styles.stateButtonText}>Retry</Text>
-          </Pressable>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.center}>
+          <WorkoutStateCard
+            variant="error"
+            title="Could not load workout day"
+            description={loadError}
+            actionLabel="Retry"
+            onAction={loadData}
+            layout="full"
+            testID="edit-workout-error"
+          />
         </View>
       </SafeAreaView>
     );
@@ -265,7 +275,7 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
   const bodySections = ['All', ...Array.from(new Set(availableExercises.map((e) => e.bodySection)))];
   const muscleGroups = ['All', ...Array.from(new Set(availableExercises.map((e) => e.muscleGroup)))];
   const equipmentOptions = ['All', ...Array.from(new Set(availableExercises.map((e) => e.equipment)))];
-  const hasExerciseCatalog = exerciseCatalogStatus === 'ready' || exerciseCatalogStatus === 'empty';
+  const hasExerciseCatalog = exerciseCatalogStatus === 'ready';
 
   const filteredExercises = availableExercises.filter((e) => {
     const bySection = selectedBodySection === 'All' || e.bodySection === selectedBodySection;
@@ -399,17 +409,22 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               {!hasExerciseCatalog && (
-                <View style={styles.catalogPlaceholderBox}>
-                  <Text style={styles.catalogPlaceholderTitle}>Exercise library unavailable</Text>
-                  <Text style={styles.catalogPlaceholderText}>
-                    Cannot load exercises from API right now. You can still type your own exercise below.
-                  </Text>
-                  {exerciseCatalogStatus === 'error' && (
-                    <Pressable style={styles.catalogRetryButton} onPress={loadExerciseCatalog}>
-                      <Text style={styles.catalogRetryButtonText}>Retry library load</Text>
-                    </Pressable>
-                  )}
-                </View>
+                <WorkoutStateCard
+                  variant={exerciseCatalogStatus === 'error' ? 'error' : 'empty'}
+                  title={
+                    exerciseCatalogStatus === 'error'
+                      ? 'Exercise library unavailable'
+                      : 'No exercises available'
+                  }
+                  description={
+                    exerciseCatalogStatus === 'error'
+                      ? 'Cannot load exercises from API right now. You can still type your own exercise below.'
+                      : 'Exercise catalog is currently empty. You can still type your own exercise below.'
+                  }
+                  actionLabel={exerciseCatalogStatus === 'error' ? 'Retry library load' : undefined}
+                  onAction={exerciseCatalogStatus === 'error' ? loadExerciseCatalog : undefined}
+                  testID="edit-workout-catalog-state"
+                />
               )}
 
               {hasExerciseCatalog && (
@@ -600,50 +615,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F7',
   },
   center: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6D6E74',
-  },
-  stateCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#E5E5EA',
-    borderRadius: 18,
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  stateTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0E0E10',
-    textAlign: 'center',
-  },
-  stateMessage: {
-    marginTop: 8,
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#8D8E94',
-    textAlign: 'center',
-  },
-  stateButton: {
-    marginTop: 16,
-    backgroundColor: '#0E0E10',
-    borderRadius: 18,
-    paddingHorizontal: 22,
-    paddingVertical: 10,
-  },
-  stateButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   content: {
     paddingHorizontal: 20,
@@ -867,39 +841,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: '#8D8E94',
-  },
-  catalogPlaceholderBox: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#E5E5EA',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 14,
-  },
-  catalogPlaceholderTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0E0E10',
-    marginBottom: 6,
-  },
-  catalogPlaceholderText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#8D8E94',
-    lineHeight: 18,
-  },
-  catalogRetryButton: {
-    marginTop: 10,
-    alignSelf: 'flex-start',
-    backgroundColor: '#0E0E10',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  catalogRetryButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   hintText: {
     marginTop: -6,

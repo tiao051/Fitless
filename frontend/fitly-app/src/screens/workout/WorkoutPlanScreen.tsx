@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { WorkoutStateCard } from '../../components/workout/WorkoutStateCard';
 
 type DayPlan = {
   day: string;
@@ -114,22 +114,32 @@ export default function WorkoutPlanScreen({ navigation }: any) {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safeArea, styles.center]}>
-        <ActivityIndicator size="large" color="#0E0E10" />
-        <Text style={styles.loadingText}>Loading workout plan...</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.center}>
+          <WorkoutStateCard
+            variant="loading"
+            title="Loading workout plan..."
+            layout="full"
+            testID="workout-plan-loading"
+          />
+        </View>
       </SafeAreaView>
     );
   }
 
   if (loadError) {
     return (
-      <SafeAreaView style={[styles.safeArea, styles.center]}>
-        <View style={styles.stateCard}>
-          <Text style={styles.stateTitle}>Could not load workout plan</Text>
-          <Text style={styles.stateMessage}>{loadError}</Text>
-          <Pressable style={styles.stateButton} onPress={loadWeekPlan}>
-            <Text style={styles.stateButtonText}>Retry</Text>
-          </Pressable>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.center}>
+          <WorkoutStateCard
+            variant="error"
+            title="Could not load workout plan"
+            description={loadError}
+            actionLabel="Retry"
+            onAction={loadWeekPlan}
+            layout="full"
+            testID="workout-plan-error"
+          />
         </View>
       </SafeAreaView>
     );
@@ -247,15 +257,13 @@ export default function WorkoutPlanScreen({ navigation }: any) {
               </Pressable>
             </View>
           ) : (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>No exercises planned for today yet.</Text>
-              <Pressable
-                style={styles.planButton}
-                onPress={() => navigation.navigate('EditDayPlan', { dayIndex: getTodayIndex() })}
-              >
-                <Text style={styles.planButtonText}>Set Up Today</Text>
-              </Pressable>
-            </View>
+            <WorkoutStateCard
+              variant="empty"
+              title="No exercises planned for today yet."
+              actionLabel="Set Up Today"
+              onAction={() => navigation.navigate('EditDayPlan', { dayIndex: getTodayIndex() })}
+              testID="workout-plan-empty"
+            />
           )}
         </View>
 
@@ -277,50 +285,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F7',
   },
   center: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6D6E74',
-  },
-  stateCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#E5E5EA',
-    borderRadius: 18,
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  stateTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0E0E10',
-    textAlign: 'center',
-  },
-  stateMessage: {
-    marginTop: 8,
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#8D8E94',
-    textAlign: 'center',
-  },
-  stateButton: {
-    marginTop: 16,
-    backgroundColor: '#0E0E10',
-    borderRadius: 18,
-    paddingHorizontal: 22,
-    paddingVertical: 10,
-  },
-  stateButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   content: {
     paddingHorizontal: 20,
@@ -465,33 +432,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#0E0E10',
-  },
-  emptyCard: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#E5E5EA',
-    borderRadius: 18,
-    paddingVertical: 28,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#8D8E94',
-    marginBottom: 12,
-  },
-  planButton: {
-    backgroundColor: '#0E0E10',
-    borderRadius: 18,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-  },
-  planButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
   },
   startButton: {
     marginTop: 14,
