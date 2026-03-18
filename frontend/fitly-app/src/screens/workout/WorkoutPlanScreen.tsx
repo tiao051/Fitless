@@ -28,6 +28,7 @@ type DayPlan = {
 export default function WorkoutPlanScreen({ navigation }: any) {
   const [weekPlan, setWeekPlan] = useState<DayPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -57,25 +58,29 @@ export default function WorkoutPlanScreen({ navigation }: any) {
     });
   };
 
+  const loadWeekPlan = async () => {
+    setLoading(true);
+    setLoadError(null);
+
+    try {
+      const saved = await AsyncStorage.getItem('weeklyPlan');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setWeekPlan(normalizeWeekPlan(parsed));
+      } else {
+        setWeekPlan(createEmptyWeekPlan());
+      }
+    } catch (error) {
+      console.error('Error loading week plan:', error);
+      setWeekPlan(createEmptyWeekPlan());
+      setLoadError('Unable to load weekly workout plan. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Initialize weekly plan from AsyncStorage
   useEffect(() => {
-    const loadWeekPlan = async () => {
-      try {
-        const saved = await AsyncStorage.getItem('weeklyPlan');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          setWeekPlan(normalizeWeekPlan(parsed));
-        } else {
-          setWeekPlan(createEmptyWeekPlan());
-        }
-      } catch (error) {
-        console.error('Error loading week plan:', error);
-        setWeekPlan(createEmptyWeekPlan());
-      } finally {
-        setLoading(false);
-      }
-    };
-
     const unsubscribe = navigation.addListener('focus', () => {
       loadWeekPlan();
     });
@@ -111,6 +116,21 @@ export default function WorkoutPlanScreen({ navigation }: any) {
     return (
       <SafeAreaView style={[styles.safeArea, styles.center]}>
         <ActivityIndicator size="large" color="#0E0E10" />
+        <Text style={styles.loadingText}>Loading workout plan...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <SafeAreaView style={[styles.safeArea, styles.center]}>
+        <View style={styles.stateCard}>
+          <Text style={styles.stateTitle}>Could not load workout plan</Text>
+          <Text style={styles.stateMessage}>{loadError}</Text>
+          <Pressable style={styles.stateButton} onPress={loadWeekPlan}>
+            <Text style={styles.stateButtonText}>Retry</Text>
+          </Pressable>
+        </View>
       </SafeAreaView>
     );
   }
@@ -228,12 +248,12 @@ export default function WorkoutPlanScreen({ navigation }: any) {
             </View>
           ) : (
             <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>No workout planned for today</Text>
+              <Text style={styles.emptyText}>No exercises planned for today yet.</Text>
               <Pressable
                 style={styles.planButton}
                 onPress={() => navigation.navigate('EditDayPlan', { dayIndex: getTodayIndex() })}
               >
-                <Text style={styles.planButtonText}>Plan Now</Text>
+                <Text style={styles.planButtonText}>Set Up Today</Text>
               </Pressable>
             </View>
           )}
@@ -259,6 +279,48 @@ const styles = StyleSheet.create({
   center: {
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6D6E74',
+  },
+  stateCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#E5E5EA',
+    borderRadius: 18,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  stateTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0E0E10',
+    textAlign: 'center',
+  },
+  stateMessage: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#8D8E94',
+    textAlign: 'center',
+  },
+  stateButton: {
+    marginTop: 16,
+    backgroundColor: '#0E0E10',
+    borderRadius: 18,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+  },
+  stateButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   content: {
     paddingHorizontal: 20,
