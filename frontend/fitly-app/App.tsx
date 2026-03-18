@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Alert } from 'react-native';
 import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -6,6 +7,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from './src/context/AuthContext';
 import { AuthService } from './src/services/authService';
+import { registerUnauthorizedHandler } from './src/services/apiClient';
 
 // Screens
 import LoginScreen from './src/screens/auth/LoginScreen.tsx';
@@ -105,6 +107,8 @@ function LoggedInTabs() {
 }
 
 export default function App() {
+  const isSessionAlertOpenRef = React.useRef(false);
+
   const [state, dispatch] = React.useReducer(
     (prevState: any, action: any) => {
       switch (action.type) {
@@ -150,6 +154,37 @@ export default function App() {
     bootstrapAsync();
   }, []);
 
+  useEffect(() => {
+    const handleUnauthorized = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) return;
+
+      dispatch({ type: 'SIGN_OUT' });
+      await AsyncStorage.multiRemove(['userToken', 'userId']);
+
+      if (!isSessionAlertOpenRef.current) {
+        isSessionAlertOpenRef.current = true;
+        Alert.alert(
+          'Session expired',
+          'Your login session has expired. Please sign in again.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                isSessionAlertOpenRef.current = false;
+              },
+            },
+          ]
+        );
+      }
+    };
+
+    registerUnauthorizedHandler(handleUnauthorized);
+    return () => {
+      registerUnauthorizedHandler(null);
+    };
+  }, []);
+
   const authContext = React.useMemo(
     () => ({
       signIn: async (email: string, password: string) => {
@@ -174,8 +209,7 @@ export default function App() {
       },
       signOut: async () => {
         dispatch({ type: 'SIGN_OUT' });
-        await AsyncStorage.removeItem('userToken');
-        await AsyncStorage.removeItem('userId');
+        await AsyncStorage.multiRemove(['userToken', 'userId']);
       },
     }),
     []

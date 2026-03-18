@@ -26,7 +26,11 @@ export default function HomeScreen({ navigation }: any) {
         setTodaySummary(summary);
       }
     } catch (error) {
-      console.error('Error loading daily summary:', error);
+      const status = (error as any)?.response?.status;
+      // 401 is handled globally by apiClient interceptor.
+      if (status !== 401) {
+        console.error('Error loading daily summary:', error);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

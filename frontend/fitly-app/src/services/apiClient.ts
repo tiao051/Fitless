@@ -9,6 +9,15 @@ const client = axios.create({
   timeout: 15000, // Increase to 15s for WiFi stability
 });
 
+type UnauthorizedHandler = (() => Promise<void> | void) | null;
+
+let unauthorizedHandler: UnauthorizedHandler = null;
+let isHandlingUnauthorized = false;
+
+export const registerUnauthorizedHandler = (handler: UnauthorizedHandler) => {
+  unauthorizedHandler = handler;
+};
+
 // Interceptor: Automatically attach JWT token to requests
 client.interceptors.request.use(async (config) => {
   try {
@@ -21,5 +30,24 @@ client.interceptors.request.use(async (config) => {
   }
   return config;
 });
+
+// Interceptor: Handle expired token globally
+client.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error?.response?.status === 401 && unauthorizedHandler && !isHandlingUnauthorized) {
+      isHandlingUnauthorized = true;
+      try {
+        await unauthorizedHandler();
+      } finally {
+        setTimeout(() => {
+          isHandlingUnauthorized = false;
+        }, 1000);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default client;
