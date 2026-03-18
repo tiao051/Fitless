@@ -221,7 +221,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           <Text style={styles.pickerLabel}>Age</Text>
           <Picker selectedValue={age} onValueChange={setAge} style={styles.pickerControl} itemStyle={styles.pickerItem}>
             {ageOptions.map((value) => (
-              <Picker.Item key={value} label={`${value} years`} value={value} />
+              <Picker.Item key={value} label={`${value}`} value={value} />
             ))}
           </Picker>
         </View>
@@ -345,7 +345,7 @@ export default function OnboardingScreen({ navigation }: Props) {
       const uploaded = isFront ? frontUploaded : backUploaded;
 
       return (
-        <View>
+        <View style={{ flex: 1 }}>
           <View style={styles.photoPlaceholder}>
             <Text style={styles.photoHint}>{isFront ? 'Front body preview' : 'Back body preview'}</Text>
           </View>
@@ -355,14 +355,6 @@ export default function OnboardingScreen({ navigation }: Props) {
           </Pressable>
 
           {uploaded ? <Text style={styles.uploadedText}>Photo ready</Text> : null}
-
-          <Pressable
-            style={[styles.photoNextButton, !uploaded && styles.photoNextButtonDisabled]}
-            onPress={onPhotoNext}
-            disabled={!uploaded}
-          >
-            <Text style={styles.photoNextButtonText}>Next</Text>
-          </Pressable>
         </View>
       );
     }
@@ -387,7 +379,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         <Progress step={step} />
       </View>
 
-      <Animated.View style={{ flex: 1, opacity }}>
+      <Animated.View style={{ flex: 1, opacity, flexDirection: 'column' }}>
         <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <Text style={[styles.title, step === PHOTO_GUIDELINES_STEP && styles.alertTitle]}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
@@ -396,13 +388,16 @@ export default function OnboardingScreen({ navigation }: Props) {
         </ScrollView>
       </Animated.View>
 
-      {step !== 8 && step !== 9 ? (
-        <View style={styles.footer}>
-          <Pressable style={[styles.nextButton, !canContinue() && styles.nextButtonDisabled]} onPress={onNext}>
-            <Text style={styles.nextButtonText}>{step === TOTAL_STEPS - 1 ? 'Start with Fitly' : 'Next'}</Text>
-          </Pressable>
-        </View>
-      ) : null}
+      <View style={styles.footer}>
+        <Pressable
+          style={[styles.nextButton, !canContinue() && styles.nextButtonDisabled]}
+          onPress={step === 8 || step === 9 ? onPhotoNext : onNext}
+        >
+          <Text style={styles.nextButtonText}>
+            {step === 8 || step === 9 ? 'Later' : step === TOTAL_STEPS - 1 ? 'Start with Fitly' : 'Next'}
+          </Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -449,6 +444,7 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: 18,
     paddingBottom: 20,
+    flexGrow: 1,
   },
   title: {
     fontSize: 38,
@@ -468,6 +464,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   stepArea: {
+    flex: 1,
     minHeight: 360,
   },
   optionButton: {
@@ -612,14 +609,15 @@ const styles = StyleSheet.create({
     color: '#111',
   },
   photoPlaceholder: {
-    height: 290,
+    flex: 1,
+    minHeight: 380,
     borderRadius: 18,
     borderWidth: 2,
     borderColor: '#D1D1D6',
     backgroundColor: '#ECECEE',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
   },
   photoHint: {
     fontSize: 20,

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -15,6 +16,9 @@ import HomeScreen from './src/screens/home/HomeScreen.tsx';
 import FoodSearchScreen from './src/screens/nutrition/FoodSearchScreen.tsx';
 import LogNutritionScreen from './src/screens/nutrition/LogNutritionScreen.tsx';
 import ProfileScreen from './src/screens/profile/ProfileScreen.tsx';
+import WorkoutPlanScreen from './src/screens/workout/WorkoutPlanScreen.tsx';
+import TodayWorkoutScreen from './src/screens/workout/TodayWorkoutScreen.tsx';
+import EditWeeklyPlanScreen from './src/screens/workout/EditWeeklyPlanScreen.tsx';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -47,6 +51,9 @@ function LoggedInTabs() {
         options={{
           title: 'Today',
           tabBarLabel: 'Today',
+          tabBarIcon: () => (
+            <Text style={{ fontSize: 24 }}>📅</Text>
+          ),
         }}
       />
       <Tab.Screen 
@@ -55,6 +62,9 @@ function LoggedInTabs() {
         options={{
           title: 'Add Meal',
           tabBarLabel: 'Add',
+          tabBarIcon: () => (
+            <Text style={{ fontSize: 24 }}>➕</Text>
+          ),
         }}
       />
       <Tab.Screen 
@@ -63,6 +73,20 @@ function LoggedInTabs() {
         options={{
           title: 'Foods',
           tabBarLabel: 'Foods',
+          tabBarIcon: () => (
+            <Text style={{ fontSize: 24 }}>🍎</Text>
+          ),
+        }}
+      />
+      <Tab.Screen 
+        name="WorkoutPlan" 
+        component={WorkoutPlanScreen}
+        options={{
+          title: 'Workouts',
+          tabBarLabel: 'Workouts',
+          tabBarIcon: () => (
+            <Text style={{ fontSize: 24 }}>💪</Text>
+          ),
         }}
       />
       <Tab.Screen 
@@ -71,6 +95,9 @@ function LoggedInTabs() {
         options={{
           title: 'Profile',
           tabBarLabel: 'Profile',
+          tabBarIcon: () => (
+            <Text style={{ fontSize: 24 }}>👤</Text>
+          ),
         }}
       />
     </Tab.Navigator>
@@ -170,7 +197,14 @@ export default function App() {
               <Stack.Screen name="Register" component={RegisterScreen} />
             </Stack.Group>
           ) : (
-            <Stack.Screen name="Root" component={LoggedInTabs} />
+            <>
+              <Stack.Screen name="Root" component={LoggedInTabs} />
+              <Stack.Group screenOptions={{ presentation: 'modal' }}>
+                <Stack.Screen name="TodayWorkout" component={TodayWorkoutScreen} />
+                <Stack.Screen name="EditWeeklyPlanScreen" component={EditWeeklyPlanScreen} />
+                <Stack.Screen name="EditDayPlan" component={EditWeeklyPlanScreen} />
+              </Stack.Group>
+            </>
           )}
         </Stack.Navigator>
       </NavigationContainer>

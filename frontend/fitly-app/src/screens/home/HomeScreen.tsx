@@ -51,12 +51,6 @@ export default function HomeScreen({ navigation }: any) {
     fat: 0,
   };
 
-  const dateLabel = new Date().toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-  });
-
   if (loading) {
     return (
       <SafeAreaView style={[styles.safeArea, styles.center]}>
@@ -64,6 +58,14 @@ export default function HomeScreen({ navigation }: any) {
       </SafeAreaView>
     );
   }
+
+  const hasMeals = todaySummary?.meals && todaySummary.meals.length > 0;
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -73,60 +75,89 @@ export default function HomeScreen({ navigation }: any) {
           setRefreshing(true);
           loadData();
         }} />}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.pageTitle}>Today</Text>
-        <Text style={styles.pageSubtitle}>{dateLabel}</Text>
-
-        <View style={styles.metricsGrid}>
-          <MetricCard label="Calories" value={nutrition.calories.toFixed(0)} unit="kcal" />
-          <MetricCard label="Protein" value={nutrition.protein.toFixed(1)} unit="g" />
-          <MetricCard label="Carbs" value={nutrition.carbs.toFixed(1)} unit="g" />
-          <MetricCard label="Fat" value={nutrition.fat.toFixed(1)} unit="g" />
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <Text style={styles.greeting}>{getGreeting()}</Text>
+          <Text style={styles.subGreeting}>Let's track your health today</Text>
         </View>
 
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Meals</Text>
-          <Pressable onPress={() => navigation.navigate('LogNutrition')}>
-            <Text style={styles.sectionLink}>Add</Text>
+        {/* Quick Actions */}
+        <View style={styles.quickActionsGrid}>
+          <Pressable
+            style={[styles.quickActionButton, styles.primaryAction]}
+            onPress={() => navigation.navigate('LogNutrition')}
+          >
+            <Text style={styles.quickActionIcon}>🍽️</Text>
+            <Text style={[styles.quickActionText, styles.primaryActionText]}>Track your calories</Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.quickActionButton, styles.secondaryAction]}
+            onPress={() => navigation.navigate('FoodSearch')}
+          >
+            <Text style={styles.quickActionIcon}>🔍</Text>
+            <Text style={[styles.quickActionText, { color: '#0E0E10' }]}>Browse</Text>
           </Pressable>
         </View>
 
-        {todaySummary?.meals?.length ? (
-          todaySummary.meals.map((meal) => (
-            <View key={meal.id} style={styles.mealCard}>
-              <View>
-                <Text style={styles.mealName}>{meal.food.name}</Text>
-                <Text style={styles.mealMeta}>{meal.meal} • {meal.quantity} g</Text>
+        {/* Today's Status */}
+        {hasMeals && (
+          <View style={styles.statusCard}>
+            <View style={styles.statusHeader}>
+              <Text style={styles.statusTitle}>Today's Log</Text>
+              <View style={styles.statusTag}>
+                <Text style={styles.statusTagText}>{todaySummary.meals.length} meal{todaySummary.meals.length !== 1 ? 's' : ''}</Text>
               </View>
-              <Text style={styles.mealCalories}>{meal.nutrition.calories.toFixed(0)} kcal</Text>
             </View>
-          ))
-        ) : (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No meals logged yet</Text>
-            <Text style={styles.emptyText}>Tap Add to log your first meal for today.</Text>
+            <View style={styles.statusMetrics}>
+              <View style={styles.statusMetricItem}>
+                <Text style={styles.statusMetricLabel}>Calories</Text>
+                <Text style={styles.statusMetricValue}>{nutrition.calories.toFixed(0)}</Text>
+              </View>
+              <View style={styles.statusMetricItem}>
+                <Text style={styles.statusMetricLabel}>Protein</Text>
+                <Text style={styles.statusMetricValue}>{nutrition.protein.toFixed(0)}g</Text>
+              </View>
+              <View style={styles.statusMetricItem}>
+                <Text style={styles.statusMetricLabel}>Carbs</Text>
+                <Text style={styles.statusMetricValue}>{nutrition.carbs.toFixed(0)}g</Text>
+              </View>
+              <View style={styles.statusMetricItem}>
+                <Text style={styles.statusMetricLabel}>Fat</Text>
+                <Text style={styles.statusMetricValue}>{nutrition.fat.toFixed(0)}g</Text>
+              </View>
+            </View>
           </View>
         )}
 
-        <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('LogNutrition')}>
-          <Text style={styles.primaryButtonText}>Add meal</Text>
-        </Pressable>
+        {/* Meals List */}
+        {hasMeals && (
+          <View>
+            <Text style={styles.mealsTitle}>Meals</Text>
+            {todaySummary.meals.map((meal) => (
+              <View key={meal.id} style={styles.mealCard}>
+                <View>
+                  <Text style={styles.mealName}>{meal.food.name}</Text>
+                  <Text style={styles.mealMeta}>{meal.meal} • {meal.quantity} g</Text>
+                </View>
+                <Text style={styles.mealCalories}>{meal.nutrition.calories.toFixed(0)} kcal</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
-        <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FoodSearch')}>
-          <Text style={styles.secondaryButtonText}>Browse foods</Text>
-        </Pressable>
+        {/* Empty State */}
+        {!hasMeals && (
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyStateIcon}>📝</Text>
+            <Text style={styles.emptyStateTitle}>No meals logged yet</Text>
+            <Text style={styles.emptyStateText}>Start by logging your first meal to begin tracking!</Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function MetricCard({ label, value, unit }: { label: string; value: string; unit: string }) {
-  return (
-    <View style={styles.metricCard}>
-      <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={styles.metricUnit}>{unit}</Text>
-    </View>
   );
 }
 
@@ -144,71 +175,113 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 24,
   },
-  pageTitle: {
-    fontSize: 44,
-    lineHeight: 48,
+  /* Hero Section */
+  heroSection: {
+    marginBottom: 28,
+  },
+  greeting: {
+    fontSize: 38,
+    lineHeight: 42,
     fontWeight: '900',
     color: '#0E0E10',
-    letterSpacing: -1,
+    letterSpacing: -0.8,
   },
-  pageSubtitle: {
-    marginTop: 4,
-    marginBottom: 18,
-    fontSize: 17,
+  subGreeting: {
+    marginTop: 6,
+    fontSize: 16,
     color: '#8D8E94',
     fontWeight: '500',
   },
-  metricsGrid: {
+  /* Quick Actions */
+  quickActionsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 24,
   },
-  metricCard: {
-    width: '48.5%',
+  quickActionButton: {
+    flex: 1,
+    borderRadius: 20,
+    borderWidth: 2,
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  primaryAction: {
+    backgroundColor: '#0E0E10',
+    borderColor: '#0E0E10',
+  },
+  secondaryAction: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#101012',
+  },
+  quickActionIcon: {
+    fontSize: 28,
+  },
+  quickActionText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  primaryActionText: {
+    color: '#FFFFFF',
+  },
+  /* Status Card - shown when meals logged */
+  statusCard: {
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#101012',
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    marginBottom: 10,
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    marginBottom: 24,
   },
-  metricLabel: {
-    fontSize: 14,
-    color: '#8D8E94',
-    fontWeight: '700',
-  },
-  metricValue: {
-    marginTop: 8,
-    fontSize: 30,
-    lineHeight: 34,
-    color: '#0E0E10',
-    fontWeight: '900',
-  },
-  metricUnit: {
-    marginTop: 2,
-    fontSize: 13,
-    color: '#8D8E94',
-    fontWeight: '600',
-  },
-  sectionHeaderRow: {
-    marginTop: 18,
-    marginBottom: 10,
+  statusHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 14,
   },
-  sectionTitle: {
-    fontSize: 26,
-    lineHeight: 30,
-    color: '#0E0E10',
+  statusTitle: {
+    fontSize: 20,
     fontWeight: '800',
-  },
-  sectionLink: {
-    fontSize: 18,
     color: '#0E0E10',
-    textDecorationLine: 'underline',
+  },
+  statusTag: {
+    backgroundColor: '#F0F0F3',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  statusTagText: {
+    fontSize: 13,
     fontWeight: '600',
+    color: '#8D8E94',
+  },
+  statusMetrics: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  statusMetricItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statusMetricLabel: {
+    fontSize: 12,
+    color: '#8D8E94',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  statusMetricValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0E0E10',
+  },
+  /* Meals Section */
+  mealsTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0E0E10',
+    marginBottom: 12,
   },
   mealCard: {
     backgroundColor: '#FFFFFF',
@@ -239,54 +312,60 @@ const styles = StyleSheet.create({
     color: '#0E0E10',
     fontWeight: '700',
   },
-  emptyCard: {
+  /* Empty State */
+  emptyStateCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#101012',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0E0E10',
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 15,
+    color: '#8D8E94',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  /* Legacy - kept for compatibility */
+  metricCard: {
+    width: '48.5%',
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#101012',
     borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     marginBottom: 10,
   },
-  emptyTitle: {
-    fontSize: 18,
-    color: '#0E0E10',
-    fontWeight: '700',
-  },
-  emptyText: {
-    marginTop: 4,
-    fontSize: 15,
+  metricLabel: {
+    fontSize: 14,
     color: '#8D8E94',
-  },
-  primaryButton: {
-    marginTop: 12,
-    minHeight: 60,
-    borderRadius: 30,
-    backgroundColor: '#0E0E10',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    lineHeight: 28,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-  },
-  secondaryButton: {
-    marginTop: 10,
-    minHeight: 58,
-    borderRadius: 28,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#101012',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    color: '#0E0E10',
-    fontSize: 21,
-    lineHeight: 26,
     fontWeight: '700',
+  },
+  metricValue: {
+    marginTop: 8,
+    fontSize: 30,
+    lineHeight: 34,
+    color: '#0E0E10',
+    fontWeight: '900',
+  },
+  metricUnit: {
+    marginTop: 2,
+    fontSize: 13,
+    color: '#8D8E94',
+    fontWeight: '600',
   },
 });

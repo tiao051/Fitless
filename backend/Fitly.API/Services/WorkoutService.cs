@@ -47,9 +47,10 @@ namespace Fitly.API.Services
                 {
                     WorkoutId = workout.Id,
                     ExerciseId = setRequest.ExerciseId,
-                    Reps = setRequest.Reps,
-                    Weight = setRequest.Weight,
-                    SetNumber = setNumber++
+                    ActualReps = setRequest.Reps,
+                    ActualWeight = setRequest.Weight,
+                    SetNumber = setNumber++,
+                    IsCompleted = true
                 };
 
                 _context.WorkoutSets.Add(set);
@@ -165,8 +166,8 @@ namespace Fitly.API.Services
                             Description = exercise.Description,
                             MuscleGroup = exercise.MuscleGroup
                         },
-                        Reps = set.Reps,
-                        Weight = set.Weight
+                        Reps = set.ActualReps,
+                        Weight = set.ActualWeight
                     });
                 }
             }

@@ -2,70 +2,56 @@
 
 A fitness tracking app for workouts and nutrition.
 
-## Quick Start
+## Core Features (MVP)
 
+- User authentication
+- Workout logging
+- Basic progress tracking
+- Simple nutrition tracking
+- Leaderboard
+- Feed and social sharing
+- Progress tracking with body metrics and time-lapse transformations
+- Account management and streak system
+- Smart notifications
+- Wearable device synchronization
+
+## Features in Development
+
+### Leaderboard
+- Rank users by streak, volume, or challenge points within the community
+
+### Feed and Social Sharing
+- Share workout photos, recipes, and personal achievements
+
+### Progress Tracking
+- Body transformation time-lapse videos created from body photos (front/side/back)
+- Weekly/monthly compilation of photos to visualize changes
+- Body metrics tracking: weight, BMI, body fat percentage, and measurements
+
+### Core Platform Features
+- Account system with multi-provider login (Google, Apple ID, Facebook, Email)
+- Streak system: consecutive-day counter for motivation
+- Smart notifications: reminders for workouts, water intake, and meals based on user schedule
+- Wearable sync: integration with Apple Health, Google Fit, and Garmin for step count, heart rate, and sleep data
+
+## Tech Stack
+
+- Frontend: React Native with Expo
+- Backend: .NET 9
+- Database: PostgreSQL
+- Authentication: JWT
+
+## Getting Started
+
+### Frontend
 ```bash
-# Terminal 1: Start backend
-docker-compose up -d --build
-
-# Terminal 2: Start frontend
 cd frontend/fitly-app
 npm install
 npm start
 ```
 
-Then scan the QR code on your iPhone with Expo Go.
-
-## Setup
-
-### Prerequisites
-- Node.js 18+ and npm
-- Docker & Docker Compose
-- Expo CLI
-- iPhone with Expo Go app
-
-### Running Services
-
+### Backend
 ```bash
-# Start Docker containers (PostgreSQL + API)
-docker-compose up -d --build
-docker-compose ps
+cd backend/Fitly.API
+dotnet run
 ```
-
-Services:
-- **PostgreSQL**: port 5432
-- **.NET API**: port 5062
-- **Frontend (npm)**: port 8081
-
-## Logs
-
-All logs are written to your machine:
-
-- **API logs**: `backend/logs/api/app.log`
-- **Database logs**: `backend/logs/postgres/postgresql.log`
-- **Frontend logs**: Terminal when running `npm start`
-
-View logs:
-```bash
-# Windows PowerShell
-Get-Content backend/logs/api/app.log -Wait
-Get-Content backend/logs/postgres/postgresql.log -Wait
-
-# Linux/Mac
-tail -f backend/logs/api/app.log
-tail -f backend/logs/postgres/postgresql.log
-```
-
-## Stop Services
-
-```bash
-docker-compose down
-```
-
-## Features
-
-- User authentication with JWT
-- Workout logging and tracking
-- Nutrition tracking (1,636 pre-loaded foods)
-- Daily summary and progress tracking
-

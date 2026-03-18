@@ -1,21 +1,11 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const getBaseUrl = () => {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-  
-  if (!apiUrl || apiUrl.trim() === '') {
-    const errorMessage = '[API] EXPO_PUBLIC_API_URL is not configured in .env file';
-    console.error(errorMessage);
-    throw new Error(errorMessage);
-  }
-  
-  console.log(`[API] Using API URL: ${apiUrl}`);
-  return apiUrl;
-};
+// Hardcoded API URL for local development (IP from ipconfig Wi-Fi adapter)
+const API_BASE_URL = 'http://172.20.10.3:5062/api';
 
 const client = axios.create({
-  baseURL: getBaseUrl(),
+  baseURL: API_BASE_URL,
   timeout: 15000, // Increase to 15s for WiFi stability
 });
 

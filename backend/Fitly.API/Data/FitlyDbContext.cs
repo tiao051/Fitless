@@ -13,6 +13,9 @@ namespace Fitly.API.Data
         public DbSet<Exercise> Exercises { get; set; }
         public DbSet<Workout> Workouts { get; set; }
         public DbSet<WorkoutSet> WorkoutSets { get; set; }
+        public DbSet<WorkoutPlan> WorkoutPlans { get; set; }
+        public DbSet<DayPlan> DayPlans { get; set; }
+        public DbSet<PlannedExercise> PlannedExercises { get; set; }
         public DbSet<Food> Foods { get; set; }
         public DbSet<NutritionLog> NutritionLogs { get; set; }
 
@@ -54,7 +57,8 @@ namespace Fitly.API.Data
             modelBuilder.Entity<WorkoutSet>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Weight).HasPrecision(10, 2);
+                entity.Property(e => e.ActualWeight).HasPrecision(10, 2);
+                entity.Property(e => e.TargetWeight).HasPrecision(10, 2);
                 entity.HasOne(e => e.Workout)
                     .WithMany(w => w.Sets)
                     .HasForeignKey(e => e.WorkoutId)
@@ -63,6 +67,53 @@ namespace Fitly.API.Data
                     .WithMany(ex => ex.WorkoutSets)
                     .HasForeignKey(e => e.ExerciseId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // WorkoutPlan
+            modelBuilder.Entity<WorkoutPlan>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.StartDate).IsRequired();
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.WorkoutPlans)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasMany(e => e.DayPlans)
+                    .WithOne(d => d.WorkoutPlan)
+                    .HasForeignKey(d => d.WorkoutPlanId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // DayPlan
+            modelBuilder.Entity<DayPlan>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.DayOfWeek).IsRequired();
+                entity.HasOne(e => e.WorkoutPlan)
+                    .WithMany(wp => wp.DayPlans)
+                    .HasForeignKey(e => e.WorkoutPlanId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasMany(e => e.PlannedExercises)
+                    .WithOne(pe => pe.DayPlan)
+                    .HasForeignKey(pe => pe.DayPlanId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // PlannedExercise
+            modelBuilder.Entity<PlannedExercise>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TargetReps).IsRequired();
+                entity.Property(e => e.TargetSets).IsRequired();
+                entity.Property(e => e.TargetWeight).HasPrecision(10, 2);
+                entity.HasOne(e => e.DayPlan)
+                    .WithMany(dp => dp.PlannedExercises)
+                    .HasForeignKey(e => e.DayPlanId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Exercise)
+                    .WithMany()
+                    .HasForeignKey(e => e.ExerciseId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Food

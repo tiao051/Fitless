@@ -67,6 +67,7 @@ builder.Services.AddSwaggerGen();
 // Register Application Services
 builder.Services.AddScoped<IExerciseService, ExerciseService>();
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
+builder.Services.AddScoped<IWorkoutPlanService, WorkoutPlanService>();
 builder.Services.AddScoped<INutritionService, NutritionService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<FoodSeeder>();
