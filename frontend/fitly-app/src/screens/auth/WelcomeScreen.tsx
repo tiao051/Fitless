@@ -1,4 +1,3 @@
-import React from 'react';
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 type Props = {

@@ -4,9 +4,9 @@
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "setup:env": "node -e \"require('fs').copyFileSync('../../.env', '.env')\" && echo .env copied from root",
-    "start": "npm run setup:env && expo start",
-    "android": "npm run setup:env && expo start --android",
-    "ios": "npm run setup:env && expo start --ios",
+    "start": "npm run setup:env && expo start --lan",
+    "android": "npm run setup:env && expo start --lan --android",
+    "ios": "npm run setup:env && expo start --lan --ios",
     "web": "npm run setup:env && expo start --web"
   },
   "dependencies": {
@@ -17,7 +17,7 @@
     "@react-navigation/stack": "^6.3.20",
     "axios": "^1.6.5",
     "expo": "~54.0.2",
-    "expo-image-picker": "~16.1.4",
+    "expo-image-picker": "~17.0.10",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-native": "0.81.5",
