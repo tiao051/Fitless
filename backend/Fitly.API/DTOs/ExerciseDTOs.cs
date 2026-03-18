@@ -7,7 +7,9 @@ namespace Fitly.API.DTOs
     {
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
+        public string BodySection { get; set; } = null!;
         public string MuscleGroup { get; set; } = null!;
+        public string Equipment { get; set; } = null!;
     }
 
     /// <summary>
@@ -18,6 +20,8 @@ namespace Fitly.API.DTOs
         public int Id { get; set; }
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
+        public string BodySection { get; set; } = null!;
         public string MuscleGroup { get; set; } = null!;
+        public string Equipment { get; set; } = null!;
     }
 }

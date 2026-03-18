@@ -45,7 +45,9 @@ namespace Fitly.API.Services
             {
                 Name = request.Name,
                 Description = request.Description,
-                MuscleGroup = request.MuscleGroup
+                BodySection = request.BodySection,
+                MuscleGroup = request.MuscleGroup,
+                Equipment = request.Equipment
             };
 
             _context.Exercises.Add(exercise);
@@ -64,7 +66,9 @@ namespace Fitly.API.Services
 
             exercise.Name = request.Name;
             exercise.Description = request.Description;
+            exercise.BodySection = request.BodySection;
             exercise.MuscleGroup = request.MuscleGroup;
+            exercise.Equipment = request.Equipment;
 
             _context.Exercises.Update(exercise);
             await _context.SaveChangesAsync();
@@ -96,7 +100,9 @@ namespace Fitly.API.Services
                 Id = exercise.Id,
                 Name = exercise.Name,
                 Description = exercise.Description,
-                MuscleGroup = exercise.MuscleGroup
+                BodySection = exercise.BodySection,
+                MuscleGroup = exercise.MuscleGroup,
+                Equipment = exercise.Equipment
             };
         }
     }

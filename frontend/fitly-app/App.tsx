@@ -235,7 +235,6 @@ export default function App() {
               <Stack.Screen name="Root" component={LoggedInTabs} />
               <Stack.Group screenOptions={{ presentation: 'modal' }}>
                 <Stack.Screen name="TodayWorkout" component={TodayWorkoutScreen} />
-                <Stack.Screen name="EditWeeklyPlanScreen" component={EditWeeklyPlanScreen} />
                 <Stack.Screen name="EditDayPlan" component={EditWeeklyPlanScreen} />
               </Stack.Group>
             </>

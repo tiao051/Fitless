@@ -46,8 +46,11 @@ namespace Fitly.API.Controllers
         [HttpPost]
         public async Task<ActionResult<ExerciseResponse>> CreateExercise(CreateExerciseRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.MuscleGroup))
-                return BadRequest(new { message = "Name and MuscleGroup are required." });
+            if (string.IsNullOrWhiteSpace(request.Name)
+                || string.IsNullOrWhiteSpace(request.BodySection)
+                || string.IsNullOrWhiteSpace(request.MuscleGroup)
+                || string.IsNullOrWhiteSpace(request.Equipment))
+                return BadRequest(new { message = "Name, BodySection, MuscleGroup, and Equipment are required." });
 
             var exercise = await _exerciseService.CreateExerciseAsync(request);
             return CreatedAtAction(nameof(GetExercise), new { id = exercise.Id }, exercise);
@@ -60,8 +63,11 @@ namespace Fitly.API.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<ExerciseResponse>> UpdateExercise(int id, CreateExerciseRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.MuscleGroup))
-                return BadRequest(new { message = "Name and MuscleGroup are required." });
+            if (string.IsNullOrWhiteSpace(request.Name)
+                || string.IsNullOrWhiteSpace(request.BodySection)
+                || string.IsNullOrWhiteSpace(request.MuscleGroup)
+                || string.IsNullOrWhiteSpace(request.Equipment))
+                return BadRequest(new { message = "Name, BodySection, MuscleGroup, and Equipment are required." });
 
             var exercise = await _exerciseService.UpdateExerciseAsync(id, request);
             if (exercise == null)

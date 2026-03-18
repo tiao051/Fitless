@@ -12,13 +12,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Picker } from '@react-native-picker/picker';
+import { ExerciseService, Exercise as ExerciseApiItem } from '../../services/exerciseService';
 
-type Exercise = {
-  id: number;
-  name: string;
-  muscleGroup: string;
-};
+type Exercise = ExerciseApiItem;
 
 type PlannedExercise = {
   exerciseId: number;
@@ -33,6 +29,7 @@ type DayPlan = {
   exercises: PlannedExercise[];
   isRestDay: boolean;
   dayType?: 'unset' | 'training' | 'rest' | 'cardio' | 'custom';
+  planName?: string;
   customPlanLabel?: string;
 };
 
@@ -40,56 +37,83 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
   const { dayIndex } = route.params;
   const [currentPlan, setCurrentPlan] = useState<DayPlan | null>(null);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
+  const [exerciseCatalogStatus, setExerciseCatalogStatus] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading');
   const [loading, setLoading] = useState(true);
   const [showAddExercise, setShowAddExercise] = useState(false);
   const [showDayTypeSelector, setShowDayTypeSelector] = useState(false);
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [selectedExerciseId, setSelectedExerciseId] = useState('');
+  const [selectedBodySection, setSelectedBodySection] = useState('All');
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState('All');
+  const [selectedEquipment, setSelectedEquipment] = useState('All');
+  const [customExerciseName, setCustomExerciseName] = useState('');
   const [newSets, setNewSets] = useState('3');
   const [newReps, setNewReps] = useState('8');
   const [newWeight, setNewWeight] = useState('0');
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+  const createEmptyWeekPlan = (): DayPlan[] =>
+    days.map((day) => ({
+      day,
+      exercises: [],
+      isRestDay: false,
+      dayType: 'unset',
+      planName: '',
+      customPlanLabel: '',
+    }));
+
+  const normalizeWeekPlan = (raw: any): DayPlan[] => {
+    const base = createEmptyWeekPlan();
+    if (!Array.isArray(raw)) return base;
+
+    return base.map((item, index) => {
+      const existing = raw[index];
+      if (!existing) return item;
+
+      const inferredDayType =
+        existing.dayType || (existing.isRestDay ? 'rest' : Array.isArray(existing.exercises) && existing.exercises.length > 0 ? 'training' : 'unset');
+
+      return {
+        ...item,
+        ...existing,
+        day: item.day,
+        exercises: Array.isArray(existing.exercises) ? existing.exercises : [],
+        dayType: inferredDayType,
+        planName: existing.planName || '',
+        customPlanLabel: existing.customPlanLabel || '',
+      };
+    });
+  };
+
+  const inferSuggestedGroup = (name: string): string => {
+    const lower = name.toLowerCase();
+    if (lower.includes('chest') || lower.includes('push')) return 'Chest';
+    if (lower.includes('back') || lower.includes('pull')) return 'Back';
+    if (lower.includes('leg') || lower.includes('quad') || lower.includes('hamstring') || lower.includes('glute')) return 'Legs';
+    if (lower.includes('shoulder') || lower.includes('delts')) return 'Shoulders';
+    if (lower.includes('arm') || lower.includes('bicep') || lower.includes('tricep')) return 'Arms';
+    if (lower.includes('upper')) return 'Upper';
+    if (lower.includes('lower')) return 'Lower';
+    if (lower.includes('core') || lower.includes('abs')) return 'Core';
+    if (lower.includes('cardio') || lower.includes('run') || lower.includes('hiit')) return 'Cardio';
+    return 'All';
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load weekly plan
         const plan = await AsyncStorage.getItem('weeklyPlan');
-        if (plan) {
-          const weekPlan = JSON.parse(plan);
-          const dayPlan = weekPlan[dayIndex];
-          if (dayPlan) {
-            const inferredDayType = dayPlan.dayType || (dayPlan.isRestDay ? 'rest' : dayPlan.exercises?.length > 0 ? 'training' : 'unset');
-            setCurrentPlan({
-              ...dayPlan,
-              dayType: inferredDayType,
-              customPlanLabel: dayPlan.customPlanLabel || '',
-            });
-          } else {
-            setCurrentPlan({
-              day: days[dayIndex],
-              exercises: [],
-              isRestDay: false,
-              dayType: 'unset',
-              customPlanLabel: '',
-            });
-          }
-        } else {
-          setCurrentPlan({
-            day: days[dayIndex],
-            exercises: [],
-            isRestDay: false,
-            dayType: 'unset',
-            customPlanLabel: '',
-          });
-        }
+        const normalized = normalizeWeekPlan(plan ? JSON.parse(plan) : []);
+        setCurrentPlan(normalized[dayIndex]);
 
-        // Load available exercises (mock data for now)
-        // TODO: Replace with API call to backend
-        setAvailableExercises(mockExercises);
+        setExerciseCatalogStatus('loading');
+        const exercises = await ExerciseService.getAllExercises();
+        setAvailableExercises(exercises);
+        setExerciseCatalogStatus(exercises.length > 0 ? 'ready' : 'empty');
       } catch (error) {
         console.error('Error loading data:', error);
-        Alert.alert('Error', 'Failed to load workout plan');
+        setAvailableExercises([]);
+        setExerciseCatalogStatus('error');
       } finally {
         setLoading(false);
       }
@@ -97,17 +121,6 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
 
     loadData();
   }, [dayIndex]);
-
-  const mockExercises: Exercise[] = [
-    { id: 1, name: 'Bench Press', muscleGroup: 'Chest' },
-    { id: 2, name: 'Dumbbell Press', muscleGroup: 'Chest' },
-    { id: 3, name: 'Barbell Row', muscleGroup: 'Back' },
-    { id: 4, name: 'Lat Pulldown', muscleGroup: 'Back' },
-    { id: 5, name: 'Squat', muscleGroup: 'Legs' },
-    { id: 6, name: 'Leg Press', muscleGroup: 'Legs' },
-    { id: 7, name: 'Shoulder Press', muscleGroup: 'Shoulders' },
-    { id: 8, name: 'Lateral Raise', muscleGroup: 'Shoulders' },
-  ];
 
   if (loading || !currentPlan) {
     return (
@@ -118,14 +131,16 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
   }
 
   const addExerciseToPlan = () => {
-    if (!selectedExercise) {
-      Alert.alert('Error', 'Please select an exercise');
+    const customName = customExerciseName.trim();
+    const selectedExercise = availableExercises.find((e) => e.id.toString() === selectedExerciseId);
+    if (!selectedExercise && !customName) {
+      Alert.alert('Error', 'Please choose an exercise or enter your own exercise name');
       return;
     }
 
     const newExercise: PlannedExercise = {
-      exerciseId: selectedExercise.id,
-      exerciseName: selectedExercise.name,
+      exerciseId: selectedExercise?.id ?? -Date.now(),
+      exerciseName: selectedExercise?.name ?? customName,
       targetSets: parseInt(newSets, 10) || 3,
       targetReps: parseInt(newReps, 10) || 8,
       targetWeight: parseInt(newWeight, 10) || 0,
@@ -136,7 +151,8 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
     setCurrentPlan(updated);
 
     // Reset form
-    setSelectedExercise(null);
+    setSelectedExerciseId('');
+    setCustomExerciseName('');
     setNewSets('3');
     setNewReps('8');
     setNewWeight('0');
@@ -162,6 +178,10 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
       updated.customPlanLabel = '';
     }
 
+    if (dayType === 'rest') {
+      updated.planName = '';
+    }
+
     setCurrentPlan(updated);
     setShowDayTypeSelector(false);
   };
@@ -184,11 +204,24 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
 
   const isSetupSelected = !!currentPlan.dayType && currentPlan.dayType !== 'unset';
 
+  const openAddExerciseModal = () => {
+    const suggestedGroup = inferSuggestedGroup(currentPlan.planName || currentPlan.customPlanLabel || '');
+    setSelectedMuscleGroup(suggestedGroup);
+    setSelectedBodySection('All');
+    setSelectedEquipment('All');
+    setSelectedExerciseId('');
+    setCustomExerciseName('');
+    setShowAddExercise(true);
+  };
+
   const savePlan = async () => {
     try {
       const plan = await AsyncStorage.getItem('weeklyPlan');
-      const weekPlan = plan ? JSON.parse(plan) : [];
-      weekPlan[dayIndex] = currentPlan;
+      const weekPlan = normalizeWeekPlan(plan ? JSON.parse(plan) : []);
+      weekPlan[dayIndex] = {
+        ...currentPlan,
+        isRestDay: currentPlan.dayType === 'rest',
+      };
       await AsyncStorage.setItem('weeklyPlan', JSON.stringify(weekPlan));
 
       Alert.alert('Success', 'Workout plan saved!', [
@@ -199,7 +232,17 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
     }
   };
 
-  const muscleGroups = Array.from(new Set(availableExercises.map((e) => e.muscleGroup)));
+  const bodySections = ['All', ...Array.from(new Set(availableExercises.map((e) => e.bodySection)))];
+  const muscleGroups = ['All', ...Array.from(new Set(availableExercises.map((e) => e.muscleGroup)))];
+  const equipmentOptions = ['All', ...Array.from(new Set(availableExercises.map((e) => e.equipment)))];
+  const hasExerciseCatalog = exerciseCatalogStatus === 'ready' || exerciseCatalogStatus === 'empty';
+
+  const filteredExercises = availableExercises.filter((e) => {
+    const bySection = selectedBodySection === 'All' || e.bodySection === selectedBodySection;
+    const byMuscle = selectedMuscleGroup === 'All' || e.muscleGroup === selectedMuscleGroup;
+    const byEquipment = selectedEquipment === 'All' || e.equipment === selectedEquipment;
+    return bySection && byMuscle && byEquipment;
+  });
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -236,6 +279,18 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
         )}
 
         {!currentPlan.isRestDay && isSetupSelected && (
+          <View style={styles.customPlanSection}>
+            <Text style={styles.fieldLabel}>Day name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Chest day"
+              value={currentPlan.planName || ''}
+              onChangeText={(text) => setCurrentPlan({ ...currentPlan, planName: text })}
+            />
+          </View>
+        )}
+
+        {!currentPlan.isRestDay && isSetupSelected && (
           <>
             {/* Exercises List */}
             <View>
@@ -266,7 +321,7 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
             {/* Add Exercise Button */}
             <Pressable
               style={styles.addButton}
-              onPress={() => setShowAddExercise(true)}
+              onPress={openAddExerciseModal}
             >
               <Text style={styles.addButtonText}>+ Add Exercise</Text>
             </Pressable>
@@ -313,30 +368,146 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
             </View>
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              {/* Exercise Picker */}
+              {!hasExerciseCatalog && (
+                <View style={styles.catalogPlaceholderBox}>
+                  <Text style={styles.catalogPlaceholderTitle}>Exercise library unavailable</Text>
+                  <Text style={styles.catalogPlaceholderText}>
+                    Cannot load exercises from API right now. You can still type your own exercise below.
+                  </Text>
+                </View>
+              )}
+
+              {hasExerciseCatalog && (
+                <>
+              <Text style={styles.fieldLabel}>Body Section</Text>
+              <Text style={styles.helperText}>Filter exercises by Upper / Lower / Core / Full Body.</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.groupChipsRow}
+                style={styles.groupChipsScroller}
+              >
+                {bodySections.map((section) => {
+                  const selected = selectedBodySection === section;
+                  return (
+                    <Pressable
+                      key={section}
+                      style={[styles.groupChip, selected && styles.groupChipActive]}
+                      onPress={() => {
+                        setSelectedBodySection(section);
+                        setSelectedExerciseId('');
+                      }}
+                    >
+                      <Text style={[styles.groupChipText, selected && styles.groupChipTextActive]}>{section}</Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+
+              <Text style={styles.fieldLabel}>Muscle Group</Text>
+              <Text style={styles.helperText}>Use this to quickly filter suggested exercises.</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.groupChipsRow}
+                style={styles.groupChipsScroller}
+              >
+                {muscleGroups.map((group) => {
+                  const selected = selectedMuscleGroup === group;
+                  return (
+                    <Pressable
+                      key={group}
+                      style={[styles.groupChip, selected && styles.groupChipActive]}
+                      onPress={() => {
+                        setSelectedMuscleGroup(group);
+                        setSelectedExerciseId('');
+                      }}
+                    >
+                      <Text style={[styles.groupChipText, selected && styles.groupChipTextActive]}>{group}</Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+
+              <Text style={styles.fieldLabel}>Equipment</Text>
+              <Text style={styles.helperText}>Optional filter if user wants machine-only, barbell-only, etc.</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.groupChipsRow}
+                style={styles.groupChipsScroller}
+              >
+                {equipmentOptions.map((equipment) => {
+                  const selected = selectedEquipment === equipment;
+                  return (
+                    <Pressable
+                      key={equipment}
+                      style={[styles.groupChip, selected && styles.groupChipActive]}
+                      onPress={() => {
+                        setSelectedEquipment(equipment);
+                        setSelectedExerciseId('');
+                      }}
+                    >
+                      <Text style={[styles.groupChipText, selected && styles.groupChipTextActive]}>{equipment}</Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+
               <Text style={styles.fieldLabel}>Exercise</Text>
-              <View style={styles.pickerBox}>
-                <Picker
-                  selectedValue={selectedExercise?.id.toString() || ''}
-                  onValueChange={(exerciseId) => {
-                    const exercise = availableExercises.find((e) => e.id === parseInt(exerciseId, 10));
-                    setSelectedExercise(exercise || null);
-                  }}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Select an exercise" value="" />
-                  {muscleGroups.map((group) => (
-                    <Picker.Item key={group} label={`--- ${group} ---`} value="" enabled={false} />
-                  ))}
-                  {availableExercises.map((exercise) => (
-                    <Picker.Item
-                      key={exercise.id}
-                      label={`  ${exercise.name}`}
-                      value={exercise.id.toString()}
-                    />
-                  ))}
-                </Picker>
+              <View style={styles.exerciseListBox}>
+                {filteredExercises.length === 0 ? (
+                  <Text style={styles.noExerciseText}>No exercises in this group.</Text>
+                ) : (
+                  filteredExercises.map((exercise) => {
+                    const selected = selectedExerciseId === exercise.id.toString();
+                    return (
+                      <Pressable
+                        key={exercise.id}
+                        style={[styles.exerciseOption, selected && styles.exerciseOptionSelected]}
+                        onPress={() => {
+                          setSelectedExerciseId(exercise.id.toString());
+                          setCustomExerciseName('');
+                        }}
+                      >
+                        <Text style={[styles.exerciseOptionText, selected && styles.exerciseOptionTextSelected]}>
+                          {exercise.name}
+                        </Text>
+                        <View style={styles.exerciseMetaWrap}>
+                          <Text style={[styles.exerciseOptionGroup, selected && styles.exerciseOptionTextSelected]}>
+                            {exercise.bodySection}
+                          </Text>
+                          <Text style={[styles.exerciseOptionGroup, selected && styles.exerciseOptionTextSelected]}>
+                            {exercise.muscleGroup}
+                          </Text>
+                          <Text style={[styles.exerciseOptionGroup, selected && styles.exerciseOptionTextSelected]}>
+                            {exercise.equipment}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })
+                )}
               </View>
+                </>
+              )}
+
+              <Text style={styles.fieldLabel}>Or add your own exercise</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Incline machine press"
+                value={customExerciseName}
+                onChangeText={(text) => {
+                  setCustomExerciseName(text);
+                  if (text.trim()) setSelectedExerciseId('');
+                }}
+              />
+
+              {selectedMuscleGroup !== 'All' && (
+                <Text style={styles.hintText}>
+                  Suggested from your day name. You can switch group anytime.
+                </Text>
+              )}
 
               {/* Sets */}
               <Text style={styles.fieldLabel}>Sets</Text>
@@ -613,16 +784,113 @@ const styles = StyleSheet.create({
     color: '#0E0E10',
     marginBottom: 8,
   },
-  pickerBox: {
+  helperText: {
+    marginTop: -4,
+    marginBottom: 8,
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8D8E94',
+  },
+  catalogPlaceholderBox: {
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#E5E5EA',
     borderRadius: 12,
-    marginBottom: 16,
-    overflow: 'hidden',
+    padding: 12,
+    marginBottom: 14,
   },
-  picker: {
-    height: 150,
+  catalogPlaceholderTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0E0E10',
+    marginBottom: 6,
+  },
+  catalogPlaceholderText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8D8E94',
+    lineHeight: 18,
+  },
+  hintText: {
+    marginTop: -6,
+    marginBottom: 10,
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8D8E94',
+  },
+  groupChipsScroller: {
+    marginBottom: 14,
+  },
+  groupChipsRow: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  groupChip: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#D9DAE0',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  groupChipActive: {
+    backgroundColor: '#0E0E10',
+    borderColor: '#0E0E10',
+  },
+  groupChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#54555C',
+  },
+  groupChipTextActive: {
+    color: '#FFFFFF',
+  },
+  exerciseListBox: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#E5E5EA',
+    borderRadius: 12,
+    marginBottom: 14,
+    padding: 8,
+    maxHeight: 210,
+  },
+  noExerciseText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#8D8E94',
+    padding: 8,
+  },
+  exerciseOption: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E7E7EC',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  exerciseMetaWrap: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  exerciseOptionSelected: {
+    backgroundColor: '#0E0E10',
+    borderColor: '#0E0E10',
+  },
+  exerciseOptionText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0E0E10',
+  },
+  exerciseOptionGroup: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8D8E94',
+  },
+  exerciseOptionTextSelected: {
+    color: '#FFFFFF',
   },
   input: {
     backgroundColor: '#FFFFFF',

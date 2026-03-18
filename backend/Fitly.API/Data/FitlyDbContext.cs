@@ -39,7 +39,9 @@ namespace Fitly.API.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.BodySection).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.MuscleGroup).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Equipment).IsRequired().HasMaxLength(100);
             });
 
             // Workout

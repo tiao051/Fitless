@@ -20,6 +20,9 @@ type DayPlan = {
     targetWeight: number;
   }>;
   isRestDay: boolean;
+  dayType?: 'unset' | 'training' | 'rest' | 'cardio' | 'custom';
+  planName?: string;
+  customPlanLabel?: string;
 };
 
 export default function WorkoutPlanScreen({ navigation }: any) {
@@ -28,34 +31,78 @@ export default function WorkoutPlanScreen({ navigation }: any) {
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+  const createEmptyWeekPlan = (): DayPlan[] =>
+    days.map((day) => ({
+      day,
+      exercises: [],
+      isRestDay: false,
+      dayType: 'unset',
+      planName: '',
+      customPlanLabel: '',
+    }));
+
+  const normalizeWeekPlan = (raw: any): DayPlan[] => {
+    const base = createEmptyWeekPlan();
+    if (!Array.isArray(raw)) return base;
+
+    return base.map((item, index) => {
+      const existing = raw[index];
+      if (!existing) return item;
+      return {
+        ...item,
+        ...existing,
+        day: item.day,
+        exercises: Array.isArray(existing.exercises) ? existing.exercises : [],
+      };
+    });
+  };
+
   // Initialize weekly plan from AsyncStorage
   useEffect(() => {
     const loadWeekPlan = async () => {
       try {
         const saved = await AsyncStorage.getItem('weeklyPlan');
         if (saved) {
-          setWeekPlan(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          setWeekPlan(normalizeWeekPlan(parsed));
         } else {
-          // Default empty plan
-          setWeekPlan(days.map((day) => ({
-            day,
-            exercises: [],
-            isRestDay: false,
-          })));
+          setWeekPlan(createEmptyWeekPlan());
         }
       } catch (error) {
         console.error('Error loading week plan:', error);
+        setWeekPlan(createEmptyWeekPlan());
       } finally {
         setLoading(false);
       }
     };
 
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadWeekPlan();
+    });
+
     loadWeekPlan();
-  }, []);
+
+    return unsubscribe;
+  }, [navigation]);
 
   const getTodayIndex = () => {
     const today = new Date().getDay();
     return (today + 6) % 7; // Convert Sunday=0 to Monday=0
+  };
+
+  const getPlanIcon = (dayPlan: DayPlan): string => {
+    const source = `${dayPlan.planName || ''} ${dayPlan.customPlanLabel || ''}`.toLowerCase();
+
+    if (dayPlan.isRestDay || dayPlan.dayType === 'rest') return '😴';
+    if (dayPlan.dayType === 'cardio' || source.includes('cardio') || source.includes('run')) return '🏃';
+    if (source.includes('chest') || source.includes('push')) return '🫀';
+    if (source.includes('back') || source.includes('pull')) return '🦍';
+    if (source.includes('leg') || source.includes('lower')) return '🦵';
+    if (source.includes('upper')) return '🏋️';
+    if (source.includes('core') || source.includes('abs')) return '⚡';
+    if ((dayPlan.exercises?.length || 0) > 0 || dayPlan.dayType === 'training' || dayPlan.dayType === 'custom') return '🏋️';
+
+    return '•';
   };
 
   const today = days[getTodayIndex()];
@@ -75,11 +122,23 @@ export default function WorkoutPlanScreen({ navigation }: any) {
         <Text style={styles.pageSubtitle}>Plan your workouts for the week</Text>
 
         {/* Weekly Calendar */}
-        <View style={styles.weekGrid}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.weekRow}
+          style={styles.weekScroller}
+        >
           {weekPlan.map((dayPlan, index) => {
             const isToday = dayPlan.day === today;
             const exerciseCount = dayPlan.exercises.length;
-            const isPlanned = dayPlan.isRestDay || exerciseCount > 0;
+            const hasSetup = !!dayPlan.dayType && dayPlan.dayType !== 'unset';
+            const hasPlanName = !!dayPlan.planName?.trim() || !!dayPlan.customPlanLabel?.trim();
+            const isPlanned = dayPlan.isRestDay || exerciseCount > 0 || hasSetup || hasPlanName;
+            const planIcon = getPlanIcon(dayPlan);
+            const shortLabel =
+              dayPlan.planName?.trim() ||
+              dayPlan.customPlanLabel?.trim() ||
+              (dayPlan.dayType === 'cardio' ? 'Cardio' : dayPlan.dayType === 'training' ? 'Training' : '');
 
             return (
               <Pressable
@@ -94,23 +153,39 @@ export default function WorkoutPlanScreen({ navigation }: any) {
                 <Text
                   style={[
                     styles.dayLabel,
-                    isPlanned && styles.dayLabelOnDark,
-                    !isPlanned && styles.dayLabelOnLight,
+                    isPlanned ? styles.dayLabelPlanned : styles.dayLabelUnplanned,
                   ]}
                   numberOfLines={1}
                 >
                   {dayPlan.day.slice(0, 3)}
                 </Text>
-                {dayPlan.isRestDay ? (
+
+                <Text
+                  style={[
+                    styles.dayIcon,
+                    isPlanned ? styles.dayIconPlanned : styles.dayIconUnplanned,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {planIcon}
+                </Text>
+
+                {!dayPlan.isRestDay && shortLabel ? (
                   <Text
-                    style={[styles.dayStatus, isPlanned && styles.dayStatusOnDark]}
+                    style={[
+                      styles.dayStatus,
+                      isPlanned ? styles.dayStatusPlanned : styles.dayStatusUnplanned,
+                    ]}
                     numberOfLines={1}
                   >
-                    Rest
+                    {shortLabel}
                   </Text>
-                ) : exerciseCount > 0 ? (
+                ) : !dayPlan.isRestDay && exerciseCount > 0 ? (
                   <Text
-                    style={[styles.dayStatus, isPlanned && styles.dayStatusOnDark]}
+                    style={[
+                      styles.dayStatus,
+                      isPlanned ? styles.dayStatusPlanned : styles.dayStatusUnplanned,
+                    ]}
                     numberOfLines={1}
                   >
                     {`${exerciseCount} ex`}
@@ -119,7 +194,7 @@ export default function WorkoutPlanScreen({ navigation }: any) {
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
 
         {/* Today's Workout Quick View */}
         <View style={styles.todaySection}>
@@ -167,7 +242,7 @@ export default function WorkoutPlanScreen({ navigation }: any) {
         {/* Edit Plan Button */}
         <Pressable
           style={styles.editButton}
-          onPress={() => navigation.navigate('EditWeeklyPlan')}
+          onPress={() => navigation.navigate('EditDayPlan', { dayIndex: getTodayIndex() })}
         >
           <Text style={styles.editButtonText}>Edit Full Plan</Text>
         </Pressable>
@@ -204,55 +279,74 @@ const styles = StyleSheet.create({
     color: '#8D8E94',
     fontWeight: '500',
   },
-  /* Week Grid */
-  weekGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
+  /* Week Row */
+  weekScroller: {
     marginBottom: 28,
-    rowGap: 8,
+    marginHorizontal: -2,
+  },
+  weekRow: {
+    paddingHorizontal: 2,
+    gap: 10,
   },
   dayCard: {
-    width: '23%',
+    width: 94,
     borderWidth: 2,
-    borderColor: '#D7D7DC',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 6,
-    minHeight: 68,
+    borderRadius: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    minHeight: 72,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dayCardPlanned: {
-    backgroundColor: '#0E0E10',
+    backgroundColor: '#FFFFFF',
     borderColor: '#0E0E10',
   },
   dayCardUnplanned: {
-    backgroundColor: '#EFEFF3',
-    borderColor: '#DBDBE0',
+    backgroundColor: '#EEEFF3',
+    borderColor: '#D5D6DC',
   },
   dayCardToday: {
     borderColor: '#0E0E10',
     borderWidth: 2,
+    shadowColor: '#0E0E10',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   dayLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 4,
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 3,
   },
-  dayLabelOnDark: {
-    color: '#FFFFFF',
+  dayLabelPlanned: {
+    color: '#0E0E10',
   },
-  dayLabelOnLight: {
+  dayLabelUnplanned: {
     color: '#6D6E74',
   },
   dayStatus: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#6D6E74',
+    fontSize: 10,
+    fontWeight: '700',
+    maxWidth: 76,
+    textAlign: 'center',
   },
-  dayStatusOnDark: {
-    color: '#FFFFFF',
+  dayStatusPlanned: {
+    color: '#4E4F56',
+  },
+  dayStatusUnplanned: {
+    color: '#8A8B92',
+  },
+  dayIcon: {
+    fontSize: 14,
+    marginBottom: 3,
+  },
+  dayIconPlanned: {
+    color: '#0E0E10',
+  },
+  dayIconUnplanned: {
+    color: '#8A8B92',
   },
   /* Today Section */
   todaySection: {

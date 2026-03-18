@@ -71,6 +71,7 @@ builder.Services.AddScoped<IWorkoutPlanService, WorkoutPlanService>();
 builder.Services.AddScoped<INutritionService, NutritionService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<FoodSeeder>();
+builder.Services.AddScoped<ExerciseSeeder>();
 
 // JWT Authentication Setup
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") 
@@ -114,6 +115,7 @@ using (var scope = app.Services.CreateScope())
     {
         var dbContext = services.GetRequiredService<FitlyDbContext>();
         var foodSeeder = services.GetRequiredService<FoodSeeder>();
+        var exerciseSeeder = services.GetRequiredService<ExerciseSeeder>();
 
         FileLogger.LogInfo("Applying database migrations...");
         
@@ -145,6 +147,9 @@ using (var scope = app.Services.CreateScope())
         {
             FileLogger.LogWarning($"CSV file not found at {csvPath}");
         }
+
+        await exerciseSeeder.SeedExercisesAsync();
+        FileLogger.LogInfo("Exercise seeding completed successfully");
     }
     catch (Exception ex) 
     { 
