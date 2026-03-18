@@ -9,6 +9,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 describe('TodayWorkoutScreen states', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
   const navigation = {
     goBack: jest.fn(),
     navigate: jest.fn(),
@@ -16,6 +18,11 @@ describe('TodayWorkoutScreen states', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it('shows loading state while plan is being loaded', () => {
