@@ -138,7 +138,10 @@ namespace Fitly.API.Tests.Services
                 ProteinPer100g = 20,
                 CarbsPer100g = 0,
                 FatPer100g = 13,
-                Description = "Rich in omega-3s"
+                FiberPer100g = 0,
+                IsGeneric = true,
+                ServingUnit = "g",
+                ServingText = "100g"
             };
 
             // Act

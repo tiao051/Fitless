@@ -36,8 +36,8 @@ namespace Fitly.API.Tests.Services
 
             var exercises = new List<Exercise>
             {
-                new Exercise { Id = 1, Name = "Bench Press", MuscleGroup = "Chest" },
-                new Exercise { Id = 2, Name = "Squats", MuscleGroup = "Legs" }
+                new Exercise { Id = 1, Name = "Bench Press", BodySection = "Upper", MuscleGroup = "Chest", Equipment = "Barbell" },
+                new Exercise { Id = 2, Name = "Squats", BodySection = "Lower", MuscleGroup = "Legs", Equipment = "Barbell" }
             };
 
             await _dbContext.Users.AddAsync(user);

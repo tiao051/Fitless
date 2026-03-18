@@ -37,9 +37,9 @@ namespace Fitly.API.Tests.Services
             // Arrange
             var exercises = new List<Exercise>
             {
-                new Exercise { Id = 1, Name = "Bench Press", MuscleGroup = "Chest", Description = "Push movement" },
-                new Exercise { Id = 2, Name = "Squats", MuscleGroup = "Legs", Description = "Leg compound" },
-                new Exercise { Id = 3, Name = "Deadlifts", MuscleGroup = "Back", Description = "Back compound" }
+                new Exercise { Id = 1, Name = "Bench Press", BodySection = "Upper", MuscleGroup = "Chest", Equipment = "Barbell", Description = "Push movement" },
+                new Exercise { Id = 2, Name = "Squats", BodySection = "Lower", MuscleGroup = "Legs", Equipment = "Barbell", Description = "Leg compound" },
+                new Exercise { Id = 3, Name = "Deadlifts", BodySection = "Lower", MuscleGroup = "Back", Equipment = "Barbell", Description = "Back compound" }
             };
 
             await _dbContext.Exercises.AddRangeAsync(exercises);
@@ -62,7 +62,9 @@ namespace Fitly.API.Tests.Services
             {
                 Id = 1,
                 Name = "Bench Press",
+                BodySection = "Upper",
                 MuscleGroup = "Chest",
+                Equipment = "Barbell",
                 Description = "Push movement"
             };
 
@@ -75,7 +77,9 @@ namespace Fitly.API.Tests.Services
             // Assert
             Assert.NotNull(result);
             Assert.Equal("Bench Press", result.Name);
+            Assert.Equal("Upper", result.BodySection);
             Assert.Equal("Chest", result.MuscleGroup);
+            Assert.Equal("Barbell", result.Equipment);
         }
 
         [Fact]
@@ -95,7 +99,9 @@ namespace Fitly.API.Tests.Services
             var request = new CreateExerciseRequest
             {
                 Name = "Squat",
+                BodySection = "Lower",
                 MuscleGroup = "Legs",
+                Equipment = "Barbell",
                 Description = "Compound leg movement"
             };
 
@@ -105,7 +111,9 @@ namespace Fitly.API.Tests.Services
             // Assert
             Assert.NotNull(result);
             Assert.Equal("Squat", result.Name);
+            Assert.Equal("Lower", result.BodySection);
             Assert.Equal("Legs", result.MuscleGroup);
+            Assert.Equal("Barbell", result.Equipment);
             Assert.NotEqual(0, result.Id);
 
             // Verify it was saved to the database
@@ -121,7 +129,9 @@ namespace Fitly.API.Tests.Services
             {
                 Id = 1,
                 Name = "Old Name",
-                MuscleGroup = "Chest"
+                BodySection = "Upper",
+                MuscleGroup = "Chest",
+                Equipment = "Dumbbells"
             };
 
             await _dbContext.Exercises.AddAsync(exercise);
@@ -130,7 +140,9 @@ namespace Fitly.API.Tests.Services
             var updateRequest = new CreateExerciseRequest
             {
                 Name = "New Name",
+                BodySection = "Lower",
                 MuscleGroup = "Back",
+                Equipment = "Cable",
                 Description = "Updated description"
             };
 
@@ -140,7 +152,9 @@ namespace Fitly.API.Tests.Services
             // Assert
             Assert.NotNull(result);
             Assert.Equal("New Name", result.Name);
+            Assert.Equal("Lower", result.BodySection);
             Assert.Equal("Back", result.MuscleGroup);
+            Assert.Equal("Cable", result.Equipment);
         }
 
         [Fact]
@@ -150,7 +164,9 @@ namespace Fitly.API.Tests.Services
             var updateRequest = new CreateExerciseRequest
             {
                 Name = "New Name",
-                MuscleGroup = "Chest"
+                BodySection = "Upper",
+                MuscleGroup = "Chest",
+                Equipment = "Machine"
             };
 
             // Act
@@ -168,7 +184,9 @@ namespace Fitly.API.Tests.Services
             {
                 Id = 1,
                 Name = "Bench Press",
-                MuscleGroup = "Chest"
+                BodySection = "Upper",
+                MuscleGroup = "Chest",
+                Equipment = "Barbell"
             };
 
             await _dbContext.Exercises.AddAsync(exercise);
