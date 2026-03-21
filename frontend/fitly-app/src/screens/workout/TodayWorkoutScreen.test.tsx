@@ -1,11 +1,27 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import TodayWorkoutScreen from './TodayWorkoutScreen';
+import { WorkoutPlanService } from '../../services/workoutPlanService';
+import { WorkoutService } from '../../services/workoutService';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(),
   setItem: jest.fn(),
   removeItem: jest.fn(),
+}));
+
+jest.mock('../../services/workoutPlanService', () => ({
+  WorkoutPlanService: {
+    getTodayPlan: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/workoutService', () => ({
+  WorkoutService: {
+    getUserWorkoutsByDateRange: jest.fn(),
+    createWorkout: jest.fn(),
+    deleteWorkout: jest.fn(),
+  },
 }));
 
 describe('TodayWorkoutScreen states', () => {
@@ -18,6 +34,7 @@ describe('TodayWorkoutScreen states', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue('1');
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
@@ -26,7 +43,7 @@ describe('TodayWorkoutScreen states', () => {
   });
 
   it('shows loading state while plan is being loaded', () => {
-    (AsyncStorage.getItem as jest.Mock).mockReturnValue(new Promise(() => {}));
+    (WorkoutPlanService.getTodayPlan as jest.Mock).mockReturnValue(new Promise(() => {}));
 
     render(<TodayWorkoutScreen navigation={navigation} />);
 
@@ -34,10 +51,14 @@ describe('TodayWorkoutScreen states', () => {
   });
 
   it('shows error state and retries', async () => {
-    (AsyncStorage.getItem as jest.Mock)
+    (WorkoutPlanService.getTodayPlan as jest.Mock)
       .mockRejectedValueOnce(new Error('network down'))
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null);
+      .mockResolvedValueOnce({
+        isRestDay: false,
+        date: new Date().toISOString(),
+        plannedExercises: [],
+      });
+    (WorkoutService.getUserWorkoutsByDateRange as jest.Mock).mockResolvedValue([]);
 
     render(<TodayWorkoutScreen navigation={navigation} />);
 
@@ -53,9 +74,12 @@ describe('TodayWorkoutScreen states', () => {
   });
 
   it('shows empty state and navigates to setup', async () => {
-    (AsyncStorage.getItem as jest.Mock)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null);
+    (WorkoutPlanService.getTodayPlan as jest.Mock).mockResolvedValue({
+      isRestDay: false,
+      date: new Date().toISOString(),
+      plannedExercises: [],
+    });
+    (WorkoutService.getUserWorkoutsByDateRange as jest.Mock).mockResolvedValue([]);
 
     render(<TodayWorkoutScreen navigation={navigation} />);
 

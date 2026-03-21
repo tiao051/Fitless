@@ -1,21 +1,18 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import WorkoutPlanScreen from './WorkoutPlanScreen';
+import { WorkoutPlanService } from '../../services/workoutPlanService';
 
-jest.mock('@react-native-async-storage/async-storage', () => ({
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
+jest.mock('../../services/workoutPlanService', () => ({
+  WorkoutPlanService: {
+    getCurrentWeeklyPlan: jest.fn(),
+  },
 }));
 
 describe('WorkoutPlanScreen states', () => {
   let consoleErrorSpy: jest.SpyInstance;
 
   const navigation = {
-    addListener: jest.fn((_event: string, cb: () => void) => {
-      cb();
-      return jest.fn();
-    }),
+    addListener: jest.fn(() => jest.fn()),
     navigate: jest.fn(),
   };
 
@@ -29,7 +26,7 @@ describe('WorkoutPlanScreen states', () => {
   });
 
   it('shows loading state while weekly plan is being loaded', () => {
-    (AsyncStorage.getItem as jest.Mock).mockReturnValue(new Promise(() => {}));
+    (WorkoutPlanService.getCurrentWeeklyPlan as jest.Mock).mockReturnValue(new Promise(() => {}));
 
     render(<WorkoutPlanScreen navigation={navigation} />);
 
@@ -37,9 +34,8 @@ describe('WorkoutPlanScreen states', () => {
   });
 
   it('shows error state and retries loading', async () => {
-    (AsyncStorage.getItem as jest.Mock)
+    (WorkoutPlanService.getCurrentWeeklyPlan as jest.Mock)
       .mockRejectedValueOnce(new Error('network down'))
-      .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(null);
 
     render(<WorkoutPlanScreen navigation={navigation} />);
@@ -56,7 +52,7 @@ describe('WorkoutPlanScreen states', () => {
   });
 
   it('shows empty state for today and navigates to setup', async () => {
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+    (WorkoutPlanService.getCurrentWeeklyPlan as jest.Mock).mockResolvedValue(null);
 
     render(<WorkoutPlanScreen navigation={navigation} />);
 

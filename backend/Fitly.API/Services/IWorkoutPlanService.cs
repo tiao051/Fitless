@@ -25,6 +25,6 @@ namespace Fitly.API.Services
         /// <summary>
         /// Complete a set during a workout
         /// </summary>
-        Task<int> RecordWorkoutSetAsync(int plannedExerciseId, int setNumber, int actualReps, decimal actualWeight);
+        Task<int> RecordWorkoutSetAsync(int userId, int plannedExerciseId, int setNumber, int actualReps, decimal actualWeight);
     }
 }

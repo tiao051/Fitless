@@ -1,17 +1,19 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import EditWeeklyPlanScreen from './EditWeeklyPlanScreen';
 import { ExerciseService } from '../../services/exerciseService';
-
-jest.mock('@react-native-async-storage/async-storage', () => ({
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-}));
+import { WorkoutPlanService } from '../../services/workoutPlanService';
 
 jest.mock('../../services/exerciseService', () => ({
   ExerciseService: {
     getAllExercises: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/workoutPlanService', () => ({
+  WorkoutPlanService: {
+    getCurrentWeeklyPlan: jest.fn(),
+    saveWeeklyPlan: jest.fn(),
+    getCurrentMondayIso: jest.fn(() => new Date().toISOString()),
   },
 }));
 
@@ -24,16 +26,17 @@ describe('EditWeeklyPlanScreen states', () => {
     params: { dayIndex: 0 },
   };
 
-  const buildTrainingWeekPlan = () => [
-    {
-      day: 'Monday',
-      exercises: [],
-      isRestDay: false,
-      dayType: 'training',
-      planName: 'Chest Day',
-      customPlanLabel: '',
-    },
-  ];
+  const buildWeeklyResponse = () => ({
+    workoutPlanId: 1,
+    startDate: new Date().toISOString(),
+    dayPlans: [
+      {
+        dayOfWeek: 0,
+        isRestDay: false,
+        plannedExercises: [],
+      },
+    ],
+  });
 
   let consoleErrorSpy: jest.SpyInstance;
 
@@ -47,7 +50,7 @@ describe('EditWeeklyPlanScreen states', () => {
   });
 
   it('shows loading state while data is loading', () => {
-    (AsyncStorage.getItem as jest.Mock).mockReturnValue(new Promise(() => {}));
+    (WorkoutPlanService.getCurrentWeeklyPlan as jest.Mock).mockReturnValue(new Promise(() => {}));
 
     render(<EditWeeklyPlanScreen route={route} navigation={navigation} />);
 
@@ -55,9 +58,9 @@ describe('EditWeeklyPlanScreen states', () => {
   });
 
   it('shows full-screen error state and retries', async () => {
-    (AsyncStorage.getItem as jest.Mock)
-      .mockRejectedValueOnce(new Error('storage failed'))
-      .mockResolvedValue(JSON.stringify(buildTrainingWeekPlan()));
+    (WorkoutPlanService.getCurrentWeeklyPlan as jest.Mock)
+      .mockRejectedValueOnce(new Error('api failed'))
+      .mockResolvedValue(buildWeeklyResponse());
     (ExerciseService.getAllExercises as jest.Mock).mockResolvedValue([]);
 
     render(<EditWeeklyPlanScreen route={route} navigation={navigation} />);
@@ -74,7 +77,7 @@ describe('EditWeeklyPlanScreen states', () => {
   });
 
   it('shows catalog error state in modal and retries network load', async () => {
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(buildTrainingWeekPlan()));
+    (WorkoutPlanService.getCurrentWeeklyPlan as jest.Mock).mockResolvedValue(buildWeeklyResponse());
     (ExerciseService.getAllExercises as jest.Mock)
       .mockRejectedValueOnce(new Error('api down'))
       .mockResolvedValueOnce([]);
@@ -84,6 +87,9 @@ describe('EditWeeklyPlanScreen states', () => {
     await waitFor(() => {
       expect(screen.getByText('Plan your workout')).toBeTruthy();
     });
+
+    fireEvent.press(screen.getByText('Tap to choose day setup'));
+    fireEvent.press(screen.getByText('🏋️ Training day'));
 
     fireEvent.press(screen.getByText('+ Add Exercise'));
 

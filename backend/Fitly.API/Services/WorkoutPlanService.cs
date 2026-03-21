@@ -171,17 +171,46 @@ namespace Fitly.API.Services
         /// <summary>
         /// Complete a set during a workout (records actual performance)
         /// </summary>
-        public async Task<int> RecordWorkoutSetAsync(int plannedExerciseId, int setNumber, int actualReps, decimal actualWeight)
+        public async Task<int> RecordWorkoutSetAsync(int userId, int plannedExerciseId, int setNumber, int actualReps, decimal actualWeight)
         {
-            var plannedExercise = await _context.PlannedExercises.FindAsync(plannedExerciseId);
+            var plannedExercise = await _context.PlannedExercises
+                .Where(pe => pe.Id == plannedExerciseId)
+                .Include(pe => pe.DayPlan)
+                .ThenInclude(dp => dp.WorkoutPlan)
+                .FirstOrDefaultAsync();
+
             if (plannedExercise == null)
                 throw new InvalidOperationException("Planned exercise not found");
 
-            // For now, we'll create a WorkoutSet record linked to the planned exercise
-            // This bridges the plan-based architecture with the existing workout logging
+            if (plannedExercise.DayPlan.WorkoutPlan.UserId != userId)
+                throw new InvalidOperationException("Planned exercise does not belong to current user");
+
+            var todayUtc = DateTime.UtcNow.Date;
+            var tomorrowUtc = todayUtc.AddDays(1);
+
+            var workout = await _context.Workouts
+                .FirstOrDefaultAsync(w =>
+                    w.UserId == userId &&
+                    w.WorkoutDate >= todayUtc &&
+                    w.WorkoutDate < tomorrowUtc &&
+                    w.Name == "Today Plan Log");
+
+            if (workout == null)
+            {
+                workout = new Workout
+                {
+                    UserId = userId,
+                    Name = "Today Plan Log",
+                    WorkoutDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Workouts.Add(workout);
+                await _context.SaveChangesAsync();
+            }
+
             var workoutSet = new WorkoutSet
             {
-                WorkoutId = 0, // Will be populated when the workout is finalized
+                WorkoutId = workout.Id,
                 ExerciseId = plannedExercise.ExerciseId,
                 ActualReps = actualReps,
                 ActualWeight = actualWeight,

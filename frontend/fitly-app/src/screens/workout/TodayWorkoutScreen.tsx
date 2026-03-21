@@ -11,8 +11,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WorkoutStateCard } from '../../components/workout/WorkoutStateCard';
+import { WorkoutPlanService } from '../../services/workoutPlanService';
+import { WorkoutService } from '../../services/workoutService';
 
 type PlannedExercise = {
+  plannedExerciseId?: number;
   exerciseId: number;
   exerciseName: string;
   targetSets: number;
@@ -36,6 +39,7 @@ type ExerciseLog = {
 };
 
 export default function TodayWorkoutScreen({ navigation }: any) {
+  const WORKOUT_NAME = 'Today Plan Log';
   const [exercises, setExercises] = useState<ExerciseLog[]>([]);
   const [expandedExerciseId, setExpandedExerciseId] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
@@ -43,34 +47,66 @@ export default function TodayWorkoutScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const getTodayDateKey = () => new Date().toISOString().slice(0, 10);
+  const getUserId = async (): Promise<number | null> => {
+    const userId = await AsyncStorage.getItem('userId');
+    const parsed = Number(userId);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  };
+
+  const getTodayRange = () => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return { startDate: start.toISOString(), endDate: end.toISOString() };
+  };
 
   const loadTodayPlan = async () => {
     setLoading(true);
     setLoadError(null);
 
     try {
-      const dateKey = getTodayDateKey();
-      const plan = await AsyncStorage.getItem('weeklyPlan');
-      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-      const today = days[getTodayIndex()];
+      const todayPlan = await WorkoutPlanService.getTodayPlan();
 
-      const weekPlan = plan ? JSON.parse(plan) : [];
-      const todayExercises = Array.isArray(weekPlan)
-        ? weekPlan.find((d: any) => d.day === today)?.exercises || []
-        : [];
-
-      const logs: ExerciseLog[] = todayExercises.map((ex: PlannedExercise) => ({
-        ...ex,
+      const logs: ExerciseLog[] = (todayPlan.plannedExercises || []).map((ex: PlannedExercise) => ({
+        plannedExerciseId: ex.plannedExerciseId,
+        exerciseId: ex.exerciseId,
+        exerciseName: ex.exerciseName,
+        targetSets: ex.targetSets,
+        targetReps: ex.targetReps,
+        targetWeight: Number(ex.targetWeight) || 0,
         completedSets: [],
       }));
 
-      const savedLog = await AsyncStorage.getItem(`workoutLog:${dateKey}`);
-      if (savedLog) {
-        const parsed = JSON.parse(savedLog);
-        setExercises(Array.isArray(parsed.exercises) ? parsed.exercises : logs);
-        setNotes(typeof parsed.notes === 'string' ? parsed.notes : '');
-        setIsWorkoutCompleted(Boolean(parsed.isCompleted));
+      const userId = await getUserId();
+      if (!userId) {
+        throw new Error('Missing authenticated user context');
+      }
+
+      const { startDate, endDate } = getTodayRange();
+      const todayWorkouts = await WorkoutService.getUserWorkoutsByDateRange(userId, startDate, endDate);
+      const existingWorkout = todayWorkouts.find((workout) => workout.name === WORKOUT_NAME);
+
+      if (existingWorkout) {
+        const hydratedLogs = logs.map((exercise) => {
+          const matchingSets = existingWorkout.sets
+            .filter((set) => set.exercise.id === exercise.exerciseId)
+            .sort((a, b) => a.setNumber - b.setNumber)
+            .map((set) => ({
+              setNumber: set.setNumber,
+              reps: set.reps,
+              weight: Number(set.weight) || 0,
+            }));
+
+          return {
+            ...exercise,
+            completedSets: matchingSets,
+          };
+        });
+
+        setExercises(hydratedLogs);
+        setNotes(existingWorkout.notes || '');
+        setIsWorkoutCompleted(true);
       } else {
         setExercises(logs);
         setNotes('');
@@ -151,15 +187,50 @@ export default function TodayWorkoutScreen({ navigation }: any) {
   const saveWorkoutProgress = async (completedOverride?: boolean) => {
     try {
       const isCompleted = completedOverride ?? isWorkoutCompleted;
-      const payload = {
-        date: getTodayDateKey(),
-        isCompleted,
-        notes,
-        exercises,
-        updatedAt: new Date().toISOString(),
-      };
 
-      await AsyncStorage.setItem(`workoutLog:${payload.date}`, JSON.stringify(payload));
+      const userId = await getUserId();
+      if (!userId) {
+        Alert.alert('Session', 'Please sign in again to save your workout');
+        return false;
+      }
+
+      if (!isCompleted) {
+        const { startDate, endDate } = getTodayRange();
+        const todayWorkouts = await WorkoutService.getUserWorkoutsByDateRange(userId, startDate, endDate);
+        const existingWorkout = todayWorkouts.find((workout) => workout.name === WORKOUT_NAME);
+        if (existingWorkout) {
+          await WorkoutService.deleteWorkout(userId, existingWorkout.id);
+        }
+        setIsWorkoutCompleted(false);
+        return true;
+      }
+
+      const sets = exercises.flatMap((exercise) =>
+        exercise.completedSets.map((set) => ({
+          exerciseId: exercise.exerciseId,
+          reps: set.reps,
+          weight: set.weight,
+        }))
+      );
+
+      if (sets.length === 0) {
+        Alert.alert('Nothing to save', 'Add at least one completed set before saving.');
+        return false;
+      }
+
+      const { startDate, endDate } = getTodayRange();
+      const todayWorkouts = await WorkoutService.getUserWorkoutsByDateRange(userId, startDate, endDate);
+      const existingWorkout = todayWorkouts.find((workout) => workout.name === WORKOUT_NAME);
+      if (existingWorkout) {
+        await WorkoutService.deleteWorkout(userId, existingWorkout.id);
+      }
+
+      await WorkoutService.createWorkout(userId, {
+        name: WORKOUT_NAME,
+        notes,
+        sets,
+      });
+
       setIsWorkoutCompleted(isCompleted);
       return true;
     } catch (error) {

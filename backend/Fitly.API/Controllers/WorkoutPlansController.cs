@@ -1,11 +1,13 @@
 using Fitly.API.DTOs;
 using Fitly.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace Fitly.API.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class WorkoutPlansController : ControllerBase
     {
@@ -137,7 +139,14 @@ namespace Fitly.API.Controllers
         {
             try
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdClaim, out var userId))
+                {
+                    return Unauthorized("Invalid user context");
+                }
+
                 var result = await _workoutPlanService.RecordWorkoutSetAsync(
+                    userId,
                     request.PlannedExerciseId,
                     request.SetNumber,
                     request.ActualReps,

@@ -10,13 +10,14 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExerciseService, Exercise as ExerciseApiItem } from '../../services/exerciseService';
 import { WorkoutStateCard } from '../../components/workout/WorkoutStateCard';
+import { DayPlanResponse, WorkoutPlanService } from '../../services/workoutPlanService';
 
 type Exercise = ExerciseApiItem;
 
 type PlannedExercise = {
+  plannedExerciseId?: number;
   exerciseId: number;
   exerciseName: string;
   targetSets: number;
@@ -35,6 +36,8 @@ type DayPlan = {
 
 export default function EditWeeklyPlanScreen({ route, navigation }: any) {
   const { dayIndex } = route.params;
+  const [weekPlan, setWeekPlan] = useState<DayPlan[]>([]);
+  const [planStartDate, setPlanStartDate] = useState(WorkoutPlanService.getCurrentMondayIso());
   const [currentPlan, setCurrentPlan] = useState<DayPlan | null>(null);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [exerciseCatalogStatus, setExerciseCatalogStatus] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading');
@@ -63,25 +66,39 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
       customPlanLabel: '',
     }));
 
-  const normalizeWeekPlan = (raw: any): DayPlan[] => {
+  const normalizeWeekPlan = (raw: DayPlanResponse[] | null | undefined): DayPlan[] => {
     const base = createEmptyWeekPlan();
     if (!Array.isArray(raw)) return base;
 
     return base.map((item, index) => {
-      const existing = raw[index];
+      const existing = raw.find((day) => day.dayOfWeek === index);
       if (!existing) return item;
 
+      const exercises: PlannedExercise[] = Array.isArray(existing.plannedExercises)
+        ? existing.plannedExercises
+            .slice()
+            .sort((a, b) => a.orderIndex - b.orderIndex)
+            .map((exercise) => ({
+              plannedExerciseId: exercise.plannedExerciseId,
+              exerciseId: exercise.exerciseId,
+              exerciseName: exercise.exerciseName,
+              targetSets: exercise.targetSets,
+              targetReps: exercise.targetReps,
+              targetWeight: Number(exercise.targetWeight) || 0,
+            }))
+        : [];
+
       const inferredDayType =
-        existing.dayType || (existing.isRestDay ? 'rest' : Array.isArray(existing.exercises) && existing.exercises.length > 0 ? 'training' : 'unset');
+        existing.isRestDay ? 'rest' : exercises.length > 0 ? 'training' : 'unset';
 
       return {
         ...item,
-        ...existing,
         day: item.day,
-        exercises: Array.isArray(existing.exercises) ? existing.exercises : [],
+        exercises,
+        isRestDay: existing.isRestDay,
         dayType: inferredDayType,
-        planName: existing.planName || '',
-        customPlanLabel: existing.customPlanLabel || '',
+        planName: '',
+        customPlanLabel: '',
       };
     });
   };
@@ -119,13 +136,16 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
     setLoadError(null);
 
     try {
-      const plan = await AsyncStorage.getItem('weeklyPlan');
-      const normalized = normalizeWeekPlan(plan ? JSON.parse(plan) : []);
+      const serverPlan = await WorkoutPlanService.getCurrentWeeklyPlan();
+      const normalized = normalizeWeekPlan(serverPlan?.dayPlans);
+      setWeekPlan(normalized);
       setCurrentPlan(normalized[dayIndex] ?? createEmptyWeekPlan()[dayIndex]);
+      setPlanStartDate(serverPlan?.startDate || WorkoutPlanService.getCurrentMondayIso());
 
       await loadExerciseCatalog();
     } catch (error) {
       console.error('Error loading data:', error);
+      setWeekPlan(createEmptyWeekPlan());
       setCurrentPlan(createEmptyWeekPlan()[dayIndex]);
       setLoadError('Unable to load this workout day. Please try again.');
     } finally {
@@ -170,17 +190,35 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
     );
   }
 
-  const addExerciseToPlan = () => {
+  const addExerciseToPlan = async () => {
     const customName = customExerciseName.trim();
-    const selectedExercise = availableExercises.find((e) => e.id.toString() === selectedExerciseId);
+    let selectedExercise = availableExercises.find((e) => e.id.toString() === selectedExerciseId);
+
     if (!selectedExercise && !customName) {
       Alert.alert('Error', 'Please choose an exercise or enter your own exercise name');
       return;
     }
 
+    if (!selectedExercise && customName) {
+      try {
+        const createdExercise = await ExerciseService.createExercise({
+          name: customName,
+          bodySection: selectedBodySection === 'All' ? 'Custom' : selectedBodySection,
+          muscleGroup: selectedMuscleGroup === 'All' ? 'Custom' : selectedMuscleGroup,
+          equipment: selectedEquipment === 'All' ? 'Bodyweight' : selectedEquipment,
+        });
+        selectedExercise = createdExercise;
+        setAvailableExercises((prev) => [...prev, createdExercise]);
+      } catch (error) {
+        console.error('Error creating custom exercise:', error);
+        Alert.alert('Error', 'Failed to create custom exercise in database');
+        return;
+      }
+    }
+
     const newExercise: PlannedExercise = {
-      exerciseId: selectedExercise?.id ?? -Date.now(),
-      exerciseName: selectedExercise?.name ?? customName,
+      exerciseId: selectedExercise!.id,
+      exerciseName: selectedExercise!.name,
       targetSets: parseInt(newSets, 10) || 3,
       targetReps: parseInt(newReps, 10) || 8,
       targetWeight: parseInt(newWeight, 10) || 0,
@@ -256,13 +294,30 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
 
   const savePlan = async () => {
     try {
-      const plan = await AsyncStorage.getItem('weeklyPlan');
-      const weekPlan = normalizeWeekPlan(plan ? JSON.parse(plan) : []);
-      weekPlan[dayIndex] = {
+      const updatedWeekPlan = [...(weekPlan.length ? weekPlan : createEmptyWeekPlan())];
+      updatedWeekPlan[dayIndex] = {
         ...currentPlan,
         isRestDay: currentPlan.dayType === 'rest',
       };
-      await AsyncStorage.setItem('weeklyPlan', JSON.stringify(weekPlan));
+
+      await WorkoutPlanService.saveWeeklyPlan({
+        startDate: planStartDate,
+        dayPlans: updatedWeekPlan.map((day, index) => ({
+          dayOfWeek: index,
+          isRestDay: day.isRestDay,
+          plannedExercises: day.isRestDay
+            ? []
+            : day.exercises.map((exercise, orderIndex) => ({
+                exerciseId: exercise.exerciseId,
+                targetSets: exercise.targetSets,
+                targetReps: exercise.targetReps,
+                targetWeight: exercise.targetWeight,
+                orderIndex,
+              })),
+        })),
+      });
+
+      setWeekPlan(updatedWeekPlan);
 
       Alert.alert('Success', 'Workout plan saved!', [
         { text: 'OK', onPress: () => navigation.goBack() },

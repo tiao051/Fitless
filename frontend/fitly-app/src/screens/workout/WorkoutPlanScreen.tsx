@@ -7,12 +7,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WorkoutStateCard } from '../../components/workout/WorkoutStateCard';
+import { DayPlanResponse, WorkoutPlanService } from '../../services/workoutPlanService';
 
 type DayPlan = {
   day: string;
   exercises: Array<{
+    plannedExerciseId?: number;
     exerciseId: number;
     exerciseName: string;
     targetSets: number;
@@ -42,18 +43,36 @@ export default function WorkoutPlanScreen({ navigation }: any) {
       customPlanLabel: '',
     }));
 
-  const normalizeWeekPlan = (raw: any): DayPlan[] => {
+  const normalizeWeekPlan = (raw: DayPlanResponse[] | null | undefined): DayPlan[] => {
     const base = createEmptyWeekPlan();
     if (!Array.isArray(raw)) return base;
 
-    return base.map((item, index) => {
-      const existing = raw[index];
+    return base.map((item) => {
+      const existing = raw.find((day) => day.dayOfWeek === days.indexOf(item.day));
       if (!existing) return item;
+
+      const exercises = Array.isArray(existing.plannedExercises)
+        ? existing.plannedExercises
+            .slice()
+            .sort((a, b) => a.orderIndex - b.orderIndex)
+            .map((exercise) => ({
+              plannedExerciseId: exercise.plannedExerciseId,
+              exerciseId: exercise.exerciseId,
+              exerciseName: exercise.exerciseName,
+              targetSets: exercise.targetSets,
+              targetReps: exercise.targetReps,
+              targetWeight: Number(exercise.targetWeight) || 0,
+            }))
+        : [];
+
       return {
         ...item,
-        ...existing,
         day: item.day,
-        exercises: Array.isArray(existing.exercises) ? existing.exercises : [],
+        exercises,
+        isRestDay: existing.isRestDay,
+        dayType: existing.isRestDay ? 'rest' : exercises.length > 0 ? 'training' : 'unset',
+        planName: '',
+        customPlanLabel: '',
       };
     });
   };
@@ -63,13 +82,8 @@ export default function WorkoutPlanScreen({ navigation }: any) {
     setLoadError(null);
 
     try {
-      const saved = await AsyncStorage.getItem('weeklyPlan');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setWeekPlan(normalizeWeekPlan(parsed));
-      } else {
-        setWeekPlan(createEmptyWeekPlan());
-      }
+      const currentPlan = await WorkoutPlanService.getCurrentWeeklyPlan();
+      setWeekPlan(normalizeWeekPlan(currentPlan?.dayPlans));
     } catch (error) {
       console.error('Error loading week plan:', error);
       setWeekPlan(createEmptyWeekPlan());
