@@ -30,6 +30,7 @@ type CompletedSet = {
 };
 
 type ExerciseLog = {
+  plannedExerciseId?: number;
   exerciseId: number;
   exerciseName: string;
   targetSets: number;
@@ -207,9 +208,10 @@ export default function TodayWorkoutScreen({ navigation }: any) {
 
       const sets = exercises.flatMap((exercise) =>
         exercise.completedSets.map((set) => ({
-          exerciseId: exercise.exerciseId,
-          reps: set.reps,
-          weight: set.weight,
+          plannedExerciseId: exercise.plannedExerciseId,
+          setNumber: set.setNumber,
+          actualReps: set.reps,
+          actualWeight: set.weight,
         }))
       );
 
@@ -225,11 +227,21 @@ export default function TodayWorkoutScreen({ navigation }: any) {
         await WorkoutService.deleteWorkout(userId, existingWorkout.id);
       }
 
-      await WorkoutService.createWorkout(userId, {
-        name: WORKOUT_NAME,
-        notes,
-        sets,
-      });
+      const validSets = sets.filter((set) => Number.isInteger(set.plannedExerciseId) && (set.plannedExerciseId as number) > 0);
+      if (validSets.length === 0) {
+        Alert.alert('Error', 'This plan has no valid planned exercise ids to record.');
+        return false;
+      }
+
+      for (const set of validSets) {
+        await WorkoutPlanService.recordWorkoutSet({
+          plannedExerciseId: set.plannedExerciseId as number,
+          setNumber: set.setNumber,
+          actualReps: set.actualReps,
+          actualWeight: set.actualWeight,
+          notes,
+        });
+      }
 
       setIsWorkoutCompleted(isCompleted);
       return true;

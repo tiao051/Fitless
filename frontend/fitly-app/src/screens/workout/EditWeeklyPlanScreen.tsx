@@ -89,7 +89,7 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
         : [];
 
       const inferredDayType =
-        existing.isRestDay ? 'rest' : exercises.length > 0 ? 'training' : 'unset';
+        existing.dayType || (existing.isRestDay ? 'rest' : exercises.length > 0 ? 'training' : 'unset');
 
       return {
         ...item,
@@ -97,8 +97,8 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
         exercises,
         isRestDay: existing.isRestDay,
         dayType: inferredDayType,
-        planName: '',
-        customPlanLabel: '',
+        planName: existing.planName || '',
+        customPlanLabel: existing.customPlanLabel || '',
       };
     });
   };
@@ -305,6 +305,9 @@ export default function EditWeeklyPlanScreen({ route, navigation }: any) {
         dayPlans: updatedWeekPlan.map((day, index) => ({
           dayOfWeek: index,
           isRestDay: day.isRestDay,
+          dayType: day.dayType,
+          planName: day.planName,
+          customPlanLabel: day.customPlanLabel,
           plannedExercises: day.isRestDay
             ? []
             : day.exercises.map((exercise, orderIndex) => ({

@@ -150,7 +150,8 @@ namespace Fitly.API.Controllers
                     request.PlannedExerciseId,
                     request.SetNumber,
                     request.ActualReps,
-                    request.ActualWeight
+                    request.ActualWeight,
+                    request.Notes
                 );
 
                 return Ok(new { workoutSetId = result });
@@ -176,5 +177,6 @@ namespace Fitly.API.Controllers
         public int SetNumber { get; set; }
         public int ActualReps { get; set; }
         public decimal ActualWeight { get; set; }
+        public string? Notes { get; set; }
     }
 }

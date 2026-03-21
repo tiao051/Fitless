@@ -25,6 +25,9 @@ namespace Fitly.API.Models
         public int WorkoutPlanId { get; set; }
         public int DayOfWeek { get; set; } // 0 = Monday, 6 = Sunday
         public bool IsRestDay { get; set; }
+        public string? DayType { get; set; }
+        public string? PlanName { get; set; }
+        public string? CustomPlanLabel { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Relations

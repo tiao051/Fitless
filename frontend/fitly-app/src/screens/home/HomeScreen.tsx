@@ -106,6 +106,13 @@ export default function HomeScreen({ navigation }: any) {
           </Pressable>
         </View>
 
+        <Pressable
+          style={styles.detailsButton}
+          onPress={() => navigation.navigate('DailyNutrition')}
+        >
+          <Text style={styles.detailsButtonText}>View Daily Nutrition Details</Text>
+        </Pressable>
+
         {/* Today's Status */}
         {hasMeals && (
           <View style={styles.statusCard}>
@@ -228,6 +235,21 @@ const styles = StyleSheet.create({
   },
   primaryActionText: {
     color: '#FFFFFF',
+  },
+  detailsButton: {
+    minHeight: 48,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#101012',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  detailsButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0E0E10',
   },
   /* Status Card - shown when meals logged */
   statusCard: {

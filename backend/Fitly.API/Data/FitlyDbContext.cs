@@ -91,6 +91,9 @@ namespace Fitly.API.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.DayOfWeek).IsRequired();
+                entity.Property(e => e.DayType).HasMaxLength(30);
+                entity.Property(e => e.PlanName).HasMaxLength(120);
+                entity.Property(e => e.CustomPlanLabel).HasMaxLength(120);
                 entity.HasOne(e => e.WorkoutPlan)
                     .WithMany(wp => wp.DayPlans)
                     .HasForeignKey(e => e.WorkoutPlanId)

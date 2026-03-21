@@ -15,6 +15,7 @@ import RegisterScreen from './src/screens/auth/RegisterScreen.tsx';
 import WelcomeScreen from './src/screens/auth/WelcomeScreen.tsx';
 import OnboardingScreen from './src/screens/auth/OnboardingScreen.tsx';
 import HomeScreen from './src/screens/home/HomeScreen.tsx';
+import DailyNutritionScreen from './src/screens/nutrition/DailyNutritionScreen.tsx';
 import FoodSearchScreen from './src/screens/nutrition/FoodSearchScreen.tsx';
 import LogNutritionScreen from './src/screens/nutrition/LogNutritionScreen.tsx';
 import ProfileScreen from './src/screens/profile/ProfileScreen.tsx';
@@ -236,6 +237,7 @@ export default function App() {
               <Stack.Group screenOptions={{ presentation: 'modal' }}>
                 <Stack.Screen name="TodayWorkout" component={TodayWorkoutScreen} />
                 <Stack.Screen name="EditDayPlan" component={EditWeeklyPlanScreen} />
+                <Stack.Screen name="DailyNutrition" component={DailyNutritionScreen} />
               </Stack.Group>
             </>
           )}

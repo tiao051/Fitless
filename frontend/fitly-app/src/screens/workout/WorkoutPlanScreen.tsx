@@ -70,9 +70,9 @@ export default function WorkoutPlanScreen({ navigation }: any) {
         day: item.day,
         exercises,
         isRestDay: existing.isRestDay,
-        dayType: existing.isRestDay ? 'rest' : exercises.length > 0 ? 'training' : 'unset',
-        planName: '',
-        customPlanLabel: '',
+        dayType: existing.dayType || (existing.isRestDay ? 'rest' : exercises.length > 0 ? 'training' : 'unset'),
+        planName: existing.planName || '',
+        customPlanLabel: existing.customPlanLabel || '',
       };
     });
   };

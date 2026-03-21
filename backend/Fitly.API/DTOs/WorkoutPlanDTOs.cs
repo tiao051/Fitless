@@ -16,6 +16,9 @@ namespace Fitly.API.DTOs
     {
         public int DayOfWeek { get; set; } // 0 = Monday, 6 = Sunday
         public bool IsRestDay { get; set; }
+        public string? DayType { get; set; }
+        public string? PlanName { get; set; }
+        public string? CustomPlanLabel { get; set; }
         public List<PlannedExerciseDTO> PlannedExercises { get; set; } = new();
     }
 
@@ -48,6 +51,9 @@ namespace Fitly.API.DTOs
     {
         public int DayOfWeek { get; set; }
         public bool IsRestDay { get; set; }
+        public string? DayType { get; set; }
+        public string? PlanName { get; set; }
+        public string? CustomPlanLabel { get; set; }
         public List<PlannedExerciseResponse> PlannedExercises { get; set; } = new();
     }
 

@@ -14,6 +14,9 @@ export interface PlannedExerciseResponse {
 export interface DayPlanResponse {
   dayOfWeek: number;
   isRestDay: boolean;
+  dayType?: 'unset' | 'training' | 'rest' | 'cardio' | 'custom';
+  planName?: string;
+  customPlanLabel?: string;
   plannedExercises: PlannedExerciseResponse[];
 }
 
@@ -34,6 +37,9 @@ export interface SaveWeeklyPlanRequest {
   dayPlans: Array<{
     dayOfWeek: number;
     isRestDay: boolean;
+    dayType?: 'unset' | 'training' | 'rest' | 'cardio' | 'custom';
+    planName?: string;
+    customPlanLabel?: string;
     plannedExercises: Array<{
       exerciseId: number;
       targetSets: number;
@@ -49,6 +55,7 @@ export interface RecordWorkoutSetRequest {
   setNumber: number;
   actualReps: number;
   actualWeight: number;
+  notes?: string;
 }
 
 const getMondayIsoDate = (baseDate = new Date()): string => {

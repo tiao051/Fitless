@@ -56,11 +56,18 @@ namespace Fitly.API.Services
             // Add day plans
             foreach (var dayDto in request.DayPlans)
             {
+                var normalizedDayType = NormalizeDayType(dayDto.DayType, dayDto.IsRestDay, dayDto.PlannedExercises?.Count ?? 0);
+                var normalizedPlanName = NormalizeText(dayDto.PlanName, 120);
+                var normalizedCustomLabel = NormalizeText(dayDto.CustomPlanLabel, 120);
+
                 var dayPlan = new DayPlan
                 {
                     WorkoutPlanId = plan.Id,
                     DayOfWeek = dayDto.DayOfWeek,
                     IsRestDay = dayDto.IsRestDay,
+                    DayType = normalizedDayType,
+                    PlanName = dayDto.IsRestDay ? null : normalizedPlanName,
+                    CustomPlanLabel = normalizedDayType == "custom" ? normalizedCustomLabel : null,
                     CreatedAt = DateTime.UtcNow
                 };
                 _context.DayPlans.Add(dayPlan);
@@ -69,7 +76,7 @@ namespace Fitly.API.Services
                 // Add exercises for this day
                 if (!dayDto.IsRestDay)
                 {
-                    foreach (var exerciseDto in dayDto.PlannedExercises)
+                    foreach (var exerciseDto in dayDto.PlannedExercises ?? new List<PlannedExerciseDTO>())
                     {
                         var plannedExercise = new PlannedExercise
                         {
@@ -171,7 +178,7 @@ namespace Fitly.API.Services
         /// <summary>
         /// Complete a set during a workout (records actual performance)
         /// </summary>
-        public async Task<int> RecordWorkoutSetAsync(int userId, int plannedExerciseId, int setNumber, int actualReps, decimal actualWeight)
+        public async Task<int> RecordWorkoutSetAsync(int userId, int plannedExerciseId, int setNumber, int actualReps, decimal actualWeight, string? notes = null)
         {
             var plannedExercise = await _context.PlannedExercises
                 .Where(pe => pe.Id == plannedExerciseId)
@@ -202,10 +209,15 @@ namespace Fitly.API.Services
                     UserId = userId,
                     Name = "Today Plan Log",
                     WorkoutDate = DateTime.UtcNow,
+                    Notes = NormalizeText(notes, 1000),
                     CreatedAt = DateTime.UtcNow
                 };
                 _context.Workouts.Add(workout);
                 await _context.SaveChangesAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(notes))
+            {
+                workout.Notes = NormalizeText(notes, 1000);
             }
 
             var workoutSet = new WorkoutSet
@@ -248,6 +260,9 @@ namespace Fitly.API.Services
                 {
                     DayOfWeek = dp.DayOfWeek,
                     IsRestDay = dp.IsRestDay,
+                    DayType = dp.DayType,
+                    PlanName = dp.PlanName,
+                    CustomPlanLabel = dp.CustomPlanLabel,
                     PlannedExercises = dp.PlannedExercises
                         .OrderBy(pe => pe.OrderIndex)
                         .Select(pe => new PlannedExerciseResponse
@@ -290,6 +305,33 @@ namespace Fitly.API.Services
         {
             var dayOfWeek = (int)date.DayOfWeek;
             return dayOfWeek == 0 ? 6 : dayOfWeek - 1; // Convert Sunday (0) to 6, Monday (1) to 0, etc.
+        }
+
+        private static string? NormalizeText(string? value, int maxLength)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            var trimmed = value.Trim();
+            return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+        }
+
+        private static string NormalizeDayType(string? dayType, bool isRestDay, int exerciseCount)
+        {
+            if (isRestDay)
+            {
+                return "rest";
+            }
+
+            var normalized = (dayType ?? string.Empty).Trim().ToLowerInvariant();
+            if (normalized is "training" or "cardio" or "custom")
+            {
+                return normalized;
+            }
+
+            return exerciseCount > 0 ? "training" : "unset";
         }
     }
 }
