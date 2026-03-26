@@ -36,8 +36,6 @@ export default function DailyNutritionScreen({ navigation }: any) {
       setLoading(true);
       loadSummary();
     });
-
-    loadSummary();
     return unsubscribe;
   }, [loadSummary, navigation]);
 

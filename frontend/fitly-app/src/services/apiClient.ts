@@ -1,8 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Hardcoded API URL for local development (IP from ipconfig Wi-Fi adapter)
-const API_BASE_URL = 'http://192.168.64.1:5062/api';
+// Prefer full URL from env; fallback to host-based URL for local LAN dev.
+const API_HOST = process.env.EXPO_PUBLIC_API_HOST || '192.168.1.5';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || `http://${API_HOST}:5062/api`;
 
 const client = axios.create({
   baseURL: API_BASE_URL,

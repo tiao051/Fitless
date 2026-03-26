@@ -49,8 +49,6 @@ export default function HomeScreen({ navigation }: any) {
       loadData();
     });
 
-    loadData();
-
     return unsubscribe;
   }, [loadData, navigation]);
 
