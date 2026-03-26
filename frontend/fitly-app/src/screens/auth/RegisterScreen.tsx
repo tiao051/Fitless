@@ -2,8 +2,8 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  ImageBackground,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -39,6 +39,7 @@ export default function RegisterScreen({ navigation }: any) {
     setLoading(true);
     try {
       await auth.signUp(email.trim(), password, displayName.trim(), '-');
+      navigation.navigate('Onboarding');
     } catch (error: any) {
       Alert.alert('Registration failed', error?.message || 'Please try again.');
     } finally {
@@ -46,30 +47,37 @@ export default function RegisterScreen({ navigation }: any) {
     }
   };
 
+  const handleGoogleSignUp = () => {
+    Alert.alert('Coming Soon', 'Google sign up is under development.');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ImageBackground
+        source={require('../../../assets/images/welcome_screen.webp')}
+        style={styles.background}
+        resizeMode="cover"
+      >
+      <View style={styles.content}>
         <View>
           <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Set up your Fitly profile.</Text>
+          <Text style={styles.subtitle}>Set up your profile</Text>
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.label}>What should we call you?</Text>
           <TextInput
             style={styles.input}
             placeholder="Your name"
-            placeholderTextColor="#8D8E94"
+            placeholderTextColor="rgba(255, 255, 255, 0.6)"
             value={displayName}
             onChangeText={setDisplayName}
             editable={!loading}
           />
 
-          <Text style={styles.label}>Email</Text>
           <TextInput
             style={styles.input}
-            placeholder="you@example.com"
-            placeholderTextColor="#8D8E94"
+            placeholder="Email"
+            placeholderTextColor="rgba(255, 255, 255, 0.6)"
             value={email}
             onChangeText={setEmail}
             editable={!loading}
@@ -77,22 +85,20 @@ export default function RegisterScreen({ navigation }: any) {
             autoCapitalize="none"
           />
 
-          <Text style={styles.label}>Password</Text>
           <TextInput
             style={styles.input}
             placeholder="Password"
-            placeholderTextColor="#8D8E94"
+            placeholderTextColor="rgba(255, 255, 255, 0.6)"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
             editable={!loading}
           />
 
-          <Text style={styles.label}>Confirm password</Text>
           <TextInput
             style={styles.input}
             placeholder="Confirm password"
-            placeholderTextColor="#8D8E94"
+            placeholderTextColor="rgba(255, 255, 255, 0.6)"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
@@ -100,7 +106,7 @@ export default function RegisterScreen({ navigation }: any) {
           />
         </View>
 
-        <View>
+        <View style={styles.buttonContainer}>
           <Pressable
             style={[styles.primaryButton, loading && styles.buttonDisabled]}
             onPress={handleRegister}
@@ -109,14 +115,23 @@ export default function RegisterScreen({ navigation }: any) {
             {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Create account</Text>}
           </Pressable>
 
-          <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Already have an account?</Text>
-            <Pressable onPress={() => navigation.navigate('Login')} disabled={loading}>
-              <Text style={styles.footerLink}>Sign in</Text>
-            </Pressable>
-          </View>
+          <Pressable
+            style={[styles.googleButton, loading && styles.buttonDisabled]}
+            onPress={handleGoogleSignUp}
+            disabled={loading}
+          >
+            <Text style={styles.googleButtonText}>Sign up with Google</Text>
+          </Pressable>
         </View>
-      </ScrollView>
+
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>Already have an account?</Text>
+          <Pressable onPress={() => navigation.navigate('Login')} disabled={loading}>
+            <Text style={styles.footerLink}>Sign in</Text>
+          </Pressable>
+        </View>
+      </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
@@ -124,78 +139,97 @@ export default function RegisterScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F5F7',
+  },
+  background: {
+    flex: 1,
   },
   content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 30,
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+    justifyContent: 'space-between',
   },
   title: {
-    fontSize: 50,
-    lineHeight: 56,
+    fontSize: 32,
     fontWeight: '900',
-    color: '#0E0E10',
-    letterSpacing: -1.2,
+    color: '#FFFFFF',
+    letterSpacing: -0.8,
   },
   subtitle: {
-    marginTop: 6,
-    fontSize: 18,
-    color: '#8D8E94',
+    marginTop: 4,
+    fontSize: 14,
+    color: '#FFFFFF',
     fontWeight: '500',
   },
   form: {
-    marginTop: 24,
-    gap: 10,
+    gap: 8,
   },
   label: {
     fontSize: 15,
-    color: '#0E0E10',
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   input: {
-    minHeight: 56,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#111',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 14,
-    fontSize: 17,
-    color: '#0E0E10',
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'rgba(14, 14, 16, 0.5)',
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: '#FFFFFF',
     fontWeight: '500',
-    marginBottom: 8,
+  },
+  buttonContainer: {
+    gap: 10,
   },
   primaryButton: {
-    marginTop: 4,
-    minHeight: 62,
-    borderRadius: 31,
-    backgroundColor: '#0E0E10',
+    minHeight: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    backgroundColor: 'rgba(14, 14, 16, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleButton: {
+    minHeight: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryButtonText: {
-    fontSize: 24,
-    lineHeight: 28,
+    fontSize: 16,
     color: '#FFFFFF',
-    fontWeight: '800',
+    fontWeight: '700',
+  },
+  googleButtonText: {
+    fontSize: 15,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   buttonDisabled: {
-    backgroundColor: '#A9A9B0',
+    backgroundColor: 'rgba(14, 14, 16, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   footerRow: {
-    marginTop: 14,
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 7,
+    gap: 5,
   },
   footerText: {
-    fontSize: 16,
-    color: '#8D8E94',
+    fontSize: 13,
+    color: '#FFFFFF',
     fontWeight: '500',
   },
   footerLink: {
-    fontSize: 16,
-    color: '#0E0E10',
+    fontSize: 13,
+    color: '#FFFFFF',
     fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 });

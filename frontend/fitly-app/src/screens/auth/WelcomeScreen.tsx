@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Props = {
@@ -6,33 +6,56 @@ type Props = {
 };
 
 export default function WelcomeScreen({ navigation }: Props) {
+  const handleSkipExplore = () => {
+    Alert.alert('Coming Soon', 'This feature is under development');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.hero}>
-          <View style={styles.logoRingOuter}>
-            <View style={styles.logoRingInner}>
-              <Text style={styles.logoGlyph}>F</Text>
-            </View>
+      <ImageBackground
+        source={require('../../../assets/images/welcome_screen.webp')}
+        style={styles.background}
+        resizeMode="cover"
+      >
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Header with Logo */}
+          <View style={styles.header}>
+            <Text style={styles.brand}>Fitly</Text>
           </View>
 
-          <Text style={styles.brand}>FITLY</Text>
-          <Text style={styles.tagline}>Your body, measured.</Text>
-        </View>
+          {/* Hero section */}
+          <View style={styles.heroSection}>
+            <Text style={styles.title}>Welcome.</Text>
+            <Text style={styles.subtitle}>Your fitness journey starts here.</Text>
+            <Text style={styles.callToAction}>Conquer your health goals!</Text>
+          </View>
 
-        <View style={styles.footer}>
-          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('Onboarding')}>
-            <Text style={styles.primaryButtonText}>Get Started</Text>
+        {/* Action buttons */}
+        <View style={styles.buttonContainer}>
+          <Pressable 
+            style={styles.primaryButton} 
+            onPress={() => navigation.navigate('Register')}
+          >
+            <Text style={styles.buttonText}>SIGN UP NOW</Text>
           </Pressable>
 
-          <View style={styles.signInRow}>
-            <Text style={styles.signInLabel}>Already have an account?</Text>
-            <Pressable onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.signInLink}>Sign in</Text>
-            </Pressable>
-          </View>
+          <Pressable 
+            style={styles.secondaryButton} 
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={styles.buttonText}>LOG IN</Text>
+          </Pressable>
         </View>
-      </View>
+
+          {/* Skip link */}
+          <Pressable 
+            style={styles.skipButton}
+            onPress={handleSkipExplore}
+          >
+            <Text style={styles.skipText}>Skip & Explore</Text>
+          </Pressable>
+        </ScrollView>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
@@ -40,87 +63,92 @@ export default function WelcomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F5F7',
   },
-  container: {
+  background: {
     flex: 1,
-    paddingHorizontal: 26,
-    paddingBottom: 24,
   },
-  hero: {
-    flex: 1,
-    justifyContent: 'center',
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 40,
+    justifyContent: 'space-between',
+  },
+  header: {
     alignItems: 'center',
-    marginTop: -30,
-  },
-  logoRingOuter: {
-    width: 190,
-    height: 190,
-    borderRadius: 95,
-    borderWidth: 2,
-    borderColor: '#ECECEF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 26,
-  },
-  logoRingInner: {
-    width: 148,
-    height: 148,
-    borderRadius: 74,
-    borderWidth: 3,
-    borderColor: '#111',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FAFAFA',
-  },
-  logoGlyph: {
-    fontSize: 72,
-    fontWeight: '900',
-    color: '#101012',
+    marginBottom: 24,
   },
   brand: {
-    marginTop: 10,
-    fontSize: 48,
+    fontSize: 32,
     fontWeight: '900',
-    letterSpacing: 5,
-    color: '#0E0E10',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
-  tagline: {
-    marginTop: 10,
-    fontSize: 19,
-    color: '#8D8E94',
+  heroSection: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  title: {
+    fontSize: 42,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -0.8,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
     fontWeight: '500',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 24,
   },
-  footer: {
-    paddingBottom: 8,
+
+  callToAction: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 28,
+  },
+  buttonContainer: {
+    gap: 12,
+    marginTop: 100,
+    marginBottom: 12,
   },
   primaryButton: {
-    minHeight: 58,
-    borderRadius: 38,
-    backgroundColor: '#0E0E10',
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 54,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    borderRadius: 14,
+    backgroundColor: 'rgba(14, 14, 16, 0.6)',
   },
-  primaryButtonText: {
-    color: '#FFF',
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  signInRow: {
-    marginTop: 16,
-    flexDirection: 'row',
+  secondaryButton: {
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    minHeight: 54,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    borderRadius: 14,
+    backgroundColor: 'rgba(14, 14, 16, 0.6)',
   },
-  signInLabel: {
-    fontSize: 18,
-    color: '#8D8E94',
-    fontWeight: '500',
+
+  buttonText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
-  signInLink: {
-    fontSize: 18,
-    color: '#0E0E10',
-    fontWeight: '700',
+  skipButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  skipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textDecorationLine: 'underline',
   },
 });

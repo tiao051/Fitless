@@ -2,7 +2,9 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  ImageBackground,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -35,7 +37,12 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ImageBackground
+        source={require('../../../assets/images/welcome_screen.webp')}
+        style={styles.background}
+        resizeMode="cover"
+      >
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View>
           <Text style={styles.title}>Sign in</Text>
           <Text style={styles.subtitle}>Welcome back to Fitly.</Text>
@@ -78,7 +85,8 @@ export default function LoginScreen({ navigation }: any) {
             </Pressable>
           </View>
         </View>
-      </View>
+        </ScrollView>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
@@ -86,64 +94,69 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F5F7',
   },
-  container: {
+  background: {
     flex: 1,
-    justifyContent: 'space-between',
+  },
+  content: {
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 30,
+    justifyContent: 'space-between',
+    minHeight: '100%',
   },
   title: {
     fontSize: 50,
     lineHeight: 56,
     fontWeight: '900',
-    color: '#0E0E10',
+    color: '#FFFFFF',
     letterSpacing: -1.2,
   },
   subtitle: {
     marginTop: 6,
     fontSize: 18,
-    color: '#8D8E94',
+    color: '#FFFFFF',
     fontWeight: '500',
   },
   form: {
-    marginTop: 40,
+    marginTop: 8,
     gap: 10,
   },
   label: {
     fontSize: 15,
-    color: '#0E0E10',
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   input: {
     minHeight: 56,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: '#111',
-    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+    backgroundColor: 'rgba(14, 14, 16, 0.6)',
     paddingHorizontal: 14,
     fontSize: 17,
-    color: '#0E0E10',
+    color: '#FFFFFF',
     fontWeight: '500',
     marginBottom: 8,
   },
   primaryButton: {
-    minHeight: 62,
-    borderRadius: 31,
-    backgroundColor: '#0E0E10',
+    minHeight: 54,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    backgroundColor: 'rgba(14, 14, 16, 0.6)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryButtonText: {
-    fontSize: 24,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 24,
     color: '#FFFFFF',
     fontWeight: '800',
   },
   buttonDisabled: {
-    backgroundColor: '#A9A9B0',
+    backgroundColor: 'rgba(14, 14, 16, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.5)',
   },
   footerRow: {
     marginTop: 14,
@@ -153,12 +166,13 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 16,
-    color: '#8D8E94',
+    color: '#FFFFFF',
     fontWeight: '500',
   },
   footerLink: {
     fontSize: 16,
-    color: '#0E0E10',
+    color: '#FFFFFF',
     fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 });

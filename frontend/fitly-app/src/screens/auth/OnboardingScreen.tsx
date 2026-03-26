@@ -116,7 +116,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
   const onBack = () => {
     if (step === 0) {
-      navigation.navigate('Welcome');
+      navigation.navigate('Register');
       return;
     }
     animateAndSetStep(step - 1);
@@ -128,7 +128,7 @@ export default function OnboardingScreen({ navigation }: Props) {
     if (step < TOTAL_STEPS - 1) {
       animateAndSetStep(step + 1);
     } else {
-      navigation.navigate('Register');
+      navigation.navigate('Login');
     }
   };
 
