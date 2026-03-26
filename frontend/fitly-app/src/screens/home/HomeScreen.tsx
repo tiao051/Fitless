@@ -137,7 +137,6 @@ export default function HomeScreen({ navigation }: any) {
     );
   }
 
-  const hasMeals = todaySummary?.meals && todaySummary.meals.length > 0;
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -272,69 +271,6 @@ export default function HomeScreen({ navigation }: any) {
             </Pressable>
           </View>
         </View>
-
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>Explore Exercises</Text>
-            <Pressable onPress={() => navigation.navigate('WorkoutPlan')}>
-              <Text style={styles.cardHeaderLink}>View Library</Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.exploreIconsRow}>
-            <Pressable style={styles.exploreIconCard} onPress={() => navigation.navigate('WorkoutPlan')}>
-              <Text style={styles.exploreIcon}>🏋️</Text>
-              <Text style={styles.exploreLabel}>Upper</Text>
-            </Pressable>
-            <Pressable style={styles.exploreIconCard} onPress={() => navigation.navigate('WorkoutPlan')}>
-              <Text style={styles.exploreIcon}>🦵</Text>
-              <Text style={styles.exploreLabel}>Lower</Text>
-            </Pressable>
-            <Pressable style={styles.exploreIconCard} onPress={() => navigation.navigate('WorkoutPlan')}>
-              <Text style={styles.exploreIcon}>⚡</Text>
-              <Text style={styles.exploreLabel}>Core</Text>
-            </Pressable>
-            <Pressable style={styles.exploreIconCard} onPress={() => navigation.navigate('WorkoutPlan')}>
-              <Text style={styles.exploreIcon}>🏃</Text>
-              <Text style={styles.exploreLabel}>Cardio</Text>
-            </Pressable>
-          </View>
-
-          <Pressable
-            style={styles.searchLibraryButton}
-            onPress={() => navigation.navigate('WorkoutPlan')}
-          >
-            <Text style={styles.searchLibraryText}>Search exercises and view full library</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Quick Activity Log</Text>
-
-          <View style={styles.quickActionsGrid}>
-            <Pressable
-              style={[styles.quickActionButton, styles.secondaryAction]}
-              onPress={() => navigation.navigate('LogNutrition')}
-            >
-              <Text style={[styles.quickActionText, { color: '#0E0E10' }]}>Log Nutrition</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.quickActionButton, styles.secondaryAction]}
-              onPress={() => navigation.navigate('WorkoutPlan')}
-            >
-              <Text style={[styles.quickActionText, { color: '#0E0E10' }]}>View Workout History</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        {!hasMeals && (
-          <View style={styles.emptyStateCard}>
-            <Text style={styles.emptyStateIcon}>📝</Text>
-            <Text style={styles.emptyStateTitle}>No meals logged yet</Text>
-            <Text style={styles.emptyStateText}>Start by logging your first meal to begin tracking!</Text>
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -573,51 +509,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  exploreIconsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 12,
-  },
-  exploreIconCard: {
-    flex: 1,
-    borderWidth: 2,
-    borderColor: '#101012',
-    backgroundColor: '#F5F5F7',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-  },
-  exploreIcon: {
-    fontSize: 20,
-  },
-  exploreLabel: {
-    marginTop: 4,
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#0E0E10',
-  },
-  searchLibraryButton: {
-    minHeight: 42,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#101012',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-  },
-  searchLibraryText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0E0E10',
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-  },
   quickActionButton: {
     flex: 1,
     borderRadius: 12,
@@ -643,31 +534,5 @@ const styles = StyleSheet.create({
   },
   primaryActionText: {
     color: '#FFFFFF',
-  },
-  emptyStateCard: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#101012',
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyStateIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0E0E10',
-    marginBottom: 8,
-  },
-  emptyStateText: {
-    fontSize: 15,
-    color: '#8D8E94',
-    fontWeight: '500',
-    textAlign: 'center',
   },
 });

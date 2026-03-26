@@ -52,6 +52,7 @@ function LoggedInTabs() {
         name="Home" 
         component={HomeScreen}
         options={{
+          headerShown: false,
           title: 'Today',
           tabBarLabel: 'Today',
           tabBarIcon: () => (
