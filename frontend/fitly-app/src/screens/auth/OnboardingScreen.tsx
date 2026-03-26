@@ -101,8 +101,6 @@ export default function OnboardingScreen({ navigation }: Props) {
   const canContinue = () => {
     if (step === 0) return !!gender;
     if (step === 4) return !!ethnicity;
-    if (step === 8) return frontUploaded;
-    if (step === 9) return backUploaded;
     if (step === 10) return !!workouts;
     if (step === 11) return !!method;
     return true;
@@ -132,14 +130,6 @@ export default function OnboardingScreen({ navigation }: Props) {
     } else {
       navigation.navigate('Register');
     }
-  };
-
-  const onPhotoNext = () => {
-    if (!canContinue()) {
-      Alert.alert('Photo required', 'Please upload a photo before continuing.');
-      return;
-    }
-    onNext();
   };
 
   const openCamera = async (isFront: boolean) => {
@@ -370,6 +360,8 @@ export default function OnboardingScreen({ navigation }: Props) {
     return null;
   };
 
+  const isPhotoStep = step === 8 || step === 9;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.topRow}>
@@ -390,11 +382,14 @@ export default function OnboardingScreen({ navigation }: Props) {
 
       <View style={styles.footer}>
         <Pressable
-          style={[styles.nextButton, !canContinue() && styles.nextButtonDisabled]}
-          onPress={step === 8 || step === 9 ? onPhotoNext : onNext}
+          style={[
+            styles.nextButton,
+            isPhotoStep ? styles.nextButtonDisabled : !canContinue() && styles.nextButtonDisabled,
+          ]}
+          onPress={onNext}
         >
           <Text style={styles.nextButtonText}>
-            {step === 8 || step === 9 ? 'Later' : step === TOTAL_STEPS - 1 ? 'Start with Fitly' : 'Next'}
+            {isPhotoStep ? 'Later' : step === TOTAL_STEPS - 1 ? 'Start with Fitly' : 'Next'}
           </Text>
         </Pressable>
       </View>
