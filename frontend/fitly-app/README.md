@@ -4,12 +4,12 @@ A mobile nutrition tracking app built with React Native and Expo.
 
 ## Features
 
-- 🔐 User authentication (Register/Login with JWT)
-- 🍎 Search 1,636 foods by name
-- 📝 Log meals with quantity per day
-- 📊 Daily nutrition summary (calories, protein, carbs, fat)
-- 📱 Bottom tab navigation
-- 🎨 Clean, intuitive UI
+- User authentication (Register/Login with JWT)
+- Search 1,636 foods by name
+- Log meals with quantity per day
+- Daily nutrition summary (calories, protein, carbs, fat)
+- Bottom tab navigation
+- Clean, intuitive UI
 
 ## Prerequisites
 
@@ -215,13 +215,13 @@ expo prune             # Clean unnecessary files
 
 ## Next Steps
 
-1. ✅ Setup app structure
-2. ✅ Implement authentication
-3. ✅ Food search and logging
-4. ⏳ Add calorie goal tracking
-5. ⏳ Weekly nutrition reports
-6. ⏳ Workout logging
-7. ⏳ Social features
+1. Setup app structure
+2. Implement authentication
+3. Food search and logging
+4. Add calorie goal tracking
+5. Weekly nutrition reports
+6. Workout logging
+7. Social features
 
 ## Support
 
