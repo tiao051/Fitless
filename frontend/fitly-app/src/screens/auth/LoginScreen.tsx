@@ -4,7 +4,6 @@ import {
   Alert,
   ImageBackground,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -43,57 +42,55 @@ export default function LoginScreen({ navigation }: any) {
         resizeMode="cover"
       >
         <View style={styles.overlay}>
-          <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-            <View style={styles.content}>
-              <View style={styles.formContainer}>
-                <View style={styles.form}>
-                  <Text style={styles.label}>Email</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="you@example.com"
-                    placeholderTextColor="rgba(246, 241, 232, 0.65)"
-                    value={email}
-                    onChangeText={setEmail}
-                    editable={!loading}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
+          <View style={styles.content}>
+            <View style={styles.formContainer}>
+              <View style={styles.form}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="you@example.com"
+                  placeholderTextColor="rgba(246, 241, 232, 0.65)"
+                  value={email}
+                  onChangeText={setEmail}
+                  editable={!loading}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
 
-                  <Text style={styles.label}>Password</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    placeholderTextColor="rgba(246, 241, 232, 0.65)"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    editable={!loading}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.signInSection}>
-                <Pressable 
-                  style={[styles.primaryButton, loading && styles.buttonDisabled]} 
-                  onPress={handleLogin} 
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="#0E1A2A" />
-                  ) : (
-                    <Text style={styles.primaryButtonText}>Sign in</Text>
-                  )}
-                </Pressable>
-
-                <View style={styles.footerRow}>
-                  <Text style={styles.footerText}>New to Fitly?</Text>
-                  <Pressable onPress={() => navigation.navigate('Register')} disabled={loading}>
-                    <Text style={styles.footerLink}>Create account</Text>
-                  </Pressable>
-                </View>
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor="rgba(246, 241, 232, 0.65)"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  editable={!loading}
+                />
               </View>
             </View>
-          </ScrollView>
+
+            <View style={styles.buttonContainer}>
+              <Pressable 
+                style={[styles.primaryButton, loading && styles.buttonDisabled]} 
+                onPress={handleLogin} 
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#0E1A2A" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Sign in</Text>
+                )}
+              </Pressable>
+
+              <View style={styles.footerRow}>
+                <Text style={styles.footerText}>New to Fitly?</Text>
+                <Pressable onPress={() => navigation.navigate('Register')} disabled={loading}>
+                  <Text style={styles.footerLink}>Create account</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
         </View>
       </ImageBackground>
     </SafeAreaView>
@@ -111,14 +108,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(6, 10, 18, 0.2)',
   },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 30,
-    paddingBottom: 34,
-    minHeight: '100%',
-  },
   content: {
     flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 24,
     justifyContent: 'space-between',
   },
   formContainer: {
@@ -126,12 +120,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   form: {
-    marginTop: 2,
-    gap: 1,
-    marginBottom: 30, 
+    gap: 8,
   },
-  signInSection: {
-    gap: 0,
+  buttonContainer: {
+    gap: 10,
   },
   label: {
     fontSize: 15,
@@ -140,21 +132,21 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.35)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+    marginBottom: 4,
   },
   input: {
-    minHeight: 56,
-    borderRadius: 18,
+    minHeight: 52,
+    borderRadius: 14,
     borderWidth: 2,
     borderColor: 'rgba(246, 241, 232, 0.68)',
     backgroundColor: 'rgba(8, 17, 28, 0.36)',
     paddingHorizontal: 16,
-    fontSize: 17,
+    fontSize: 16,
     color: '#F6F1E8',
     fontWeight: '500',
-    marginBottom: 8,
   },
   primaryButton: {
-    minHeight: 54,
+    minHeight: 50,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(229, 196, 140, 0.9)',
@@ -163,8 +155,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryButtonText: {
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 17,
     color: '#0E1A2A',
     fontWeight: '800',
   },
@@ -173,13 +164,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(229, 196, 140, 0.45)',
   },
   footerRow: {
-    marginTop: 14,
+    marginTop: 10,
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 7,
   },
   footerText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#F6F1E8',
     fontWeight: '500',
     textShadowColor: 'rgba(0, 0, 0, 0.32)',
@@ -187,7 +178,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
   },
   footerLink: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#EED6AE',
     fontWeight: '700',
     textDecorationLine: 'underline',
