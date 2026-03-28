@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   ImageBackground,
   Pressable,
   StyleSheet,
@@ -12,9 +11,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-
-const BACKGROUND_BOTTOM_CROP_RATIO = 0.1;
-const backgroundTopOffset = -Math.round(Dimensions.get('window').height * BACKGROUND_BOTTOM_CROP_RATIO);
 
 export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -60,7 +56,6 @@ export default function RegisterScreen({ navigation }: any) {
       <ImageBackground
         source={require('../../../assets/images/sign_up.webp')}
         style={styles.background}
-        imageStyle={[styles.backgroundImage, { top: backgroundTopOffset }]}
         resizeMode="cover"
       >
       <View style={styles.overlay}>
@@ -149,9 +144,6 @@ const styles = StyleSheet.create({
   },
   background: {
     flex: 1,
-  },
-  backgroundImage: {
-    bottom: 0,
   },
   overlay: {
     flex: 1,

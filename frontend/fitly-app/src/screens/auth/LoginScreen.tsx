@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -13,9 +12,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-
-const BACKGROUND_BOTTOM_CROP_RATIO = 0.1;
-const backgroundTopOffset = -Math.round(Dimensions.get('window').height * BACKGROUND_BOTTOM_CROP_RATIO);
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -44,50 +40,57 @@ export default function LoginScreen({ navigation }: any) {
       <ImageBackground
         source={require('../../../assets/images/login.webp')}
         style={styles.background}
-        imageStyle={[styles.backgroundImage, { top: backgroundTopOffset }]}
         resizeMode="cover"
       >
         <View style={styles.overlay}>
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-            <View>
-              <Text style={styles.title}>Sign in</Text>
-            </View>
+          <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+            <View style={styles.content}>
+              <View style={styles.formContainer}>
+                <View style={styles.form}>
+                  <Text style={styles.label}>Email</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="you@example.com"
+                    placeholderTextColor="rgba(246, 241, 232, 0.65)"
+                    value={email}
+                    onChangeText={setEmail}
+                    editable={!loading}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
 
-            <View style={styles.form}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="you@example.com"
-                placeholderTextColor="rgba(246, 241, 232, 0.65)"
-                value={email}
-                onChangeText={setEmail}
-                editable={!loading}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+                  <Text style={styles.label}>Password</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Password"
+                    placeholderTextColor="rgba(246, 241, 232, 0.65)"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                    editable={!loading}
+                  />
+                </View>
+              </View>
 
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="rgba(246, 241, 232, 0.65)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                editable={!loading}
-              />
-            </View>
-
-            <View>
-              <Pressable style={[styles.primaryButton, loading && styles.buttonDisabled]} onPress={handleLogin} disabled={loading}>
-                {loading ? <ActivityIndicator color="#0E1A2A" /> : <Text style={styles.primaryButtonText}>Sign in</Text>}
-              </Pressable>
-
-              <View style={styles.footerRow}>
-                <Text style={styles.footerText}>New to Fitly?</Text>
-                <Pressable onPress={() => navigation.navigate('Register')} disabled={loading}>
-                  <Text style={styles.footerLink}>Create account</Text>
+              <View style={styles.signInSection}>
+                <Pressable 
+                  style={[styles.primaryButton, loading && styles.buttonDisabled]} 
+                  onPress={handleLogin} 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#0E1A2A" />
+                  ) : (
+                    <Text style={styles.primaryButtonText}>Sign in</Text>
+                  )}
                 </Pressable>
+
+                <View style={styles.footerRow}>
+                  <Text style={styles.footerText}>New to Fitly?</Text>
+                  <Pressable onPress={() => navigation.navigate('Register')} disabled={loading}>
+                    <Text style={styles.footerLink}>Create account</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
           </ScrollView>
@@ -104,33 +107,31 @@ const styles = StyleSheet.create({
   background: {
     flex: 1,
   },
-  backgroundImage: {
-    bottom: 0,
-  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(6, 10, 18, 0.2)',
   },
-  content: {
+  scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 30,
     paddingBottom: 34,
-    justifyContent: 'space-between',
     minHeight: '100%',
   },
-  title: {
-    fontSize: 50,
-    lineHeight: 56,
-    fontWeight: '900',
-    color: '#F6F1E8',
-    letterSpacing: -1.2,
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6,
+  content: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  formContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
   form: {
-    marginTop: 8,
-    gap: 11,
+    marginTop: 2,
+    gap: 1,
+    marginBottom: 30, 
+  },
+  signInSection: {
+    gap: 0,
   },
   label: {
     fontSize: 15,
