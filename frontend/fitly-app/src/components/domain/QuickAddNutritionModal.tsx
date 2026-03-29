@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
   Text,
   TextInput,
   Pressable,
-  SafeAreaView,
   ScrollView,
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NutritionService } from '../../services/nutritionService';
 
@@ -39,9 +39,42 @@ export function QuickAddNutritionModal({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedFood, setSelectedFood] = useState<SelectedFood | null>(null);
-  const [selectedTime, setSelectedTime] = useState(new Date());
+  const [selectedTime] = useState(new Date());
   const [expandBreakdown, setExpandBreakdown] = useState(false);
   const [quantity, setQuantity] = useState<string>('');
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await NutritionService.searchFoods(searchQuery);
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 300); // 300ms debounce
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
 
   // Calculate current nutrition based on quantity
   const calculateNutrition = () => {
@@ -68,22 +101,8 @@ export function QuickAddNutritionModal({
   const nutrition = calculateNutrition();
 
   // Search foods
-  const handleSearch = async (text: string) => {
+  const performSearch = (text: string) => {
     setSearchQuery(text);
-    if (text.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const results = await NutritionService.searchFoods(text);
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   // Select food and move to step 2
@@ -108,7 +127,7 @@ export function QuickAddNutritionModal({
     if (!selectedFood) return;
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const logDate = new Date().toISOString(); // Full ISO datetime instead of just date
       const gram = parseFloat(quantity) || selectedFood.servingSize;
       const userIdStr = await AsyncStorage.getItem('userId');
       
@@ -120,7 +139,7 @@ export function QuickAddNutritionModal({
       const userId = parseInt(userIdStr, 10);
       const mealType = 'breakfast'; // TODO: Allow user to select meal type
 
-      await NutritionService.logNutrition(userId, selectedFood.id, gram, mealType, today);
+      await NutritionService.logNutrition(userId, selectedFood.id, gram, mealType, logDate);
 
       onSuccess?.(`Added ${selectedFood.name} - ${nutrition.calories} kcal`);
       resetModal();
@@ -174,8 +193,7 @@ export function QuickAddNutritionModal({
                 placeholder="Search food..."
                 placeholderTextColor="#BEBEBE"
                 value={searchQuery}
-                onChangeText={handleSearch}
-                editable={!loading}
+                onChangeText={performSearch}
               />
 
               {/* Search Results */}

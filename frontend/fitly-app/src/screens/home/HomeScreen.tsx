@@ -8,6 +8,7 @@ import {
   Text,
   View,
   ToastAndroid,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -325,7 +326,11 @@ export default function HomeScreen({ navigation }: any) {
           loadData(); // Refresh data after adding meal
         }}
         onSuccess={(message) => {
-          ToastAndroid.show(message, ToastAndroid.SHORT);
+          if (Platform.OS === 'android') {
+            ToastAndroid.show(message, ToastAndroid.SHORT);
+          } else {
+            console.log('Success:', message);
+          }
           setModalVisible(false);
           loadData();
         }}
