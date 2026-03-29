@@ -1,3 +1,4 @@
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,27 +12,6 @@ namespace Fitly.API.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Create CosmeticItem table first (no dependencies)
-            migrationBuilder.CreateTable(
-                name: "CosmeticItems",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    Category = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    ImageUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    CostPoints = table.Column<int>(type: "integer", nullable: false),
-                    IsDefault = table.Column<bool>(type: "boolean", nullable: false),
-                    Rarity = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CosmeticItems", x => x.Id);
-                });
-
-            // Create Chibi table
             migrationBuilder.CreateTable(
                 name: "Chibis",
                 columns: table => new
@@ -64,7 +44,25 @@ namespace Fitly.API.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            // Create PointsBalance table
+            migrationBuilder.CreateTable(
+                name: "CosmeticItems",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    Category = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ImageUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    CostPoints = table.Column<int>(type: "integer", nullable: false),
+                    IsDefault = table.Column<bool>(type: "boolean", nullable: false),
+                    Rarity = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CosmeticItems", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "PointsBalances",
                 columns: table => new
@@ -88,7 +86,6 @@ namespace Fitly.API.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            // Create PointsTransactions table
             migrationBuilder.CreateTable(
                 name: "PointsTransactions",
                 columns: table => new
@@ -113,7 +110,6 @@ namespace Fitly.API.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            // Create UserCosmeticItems table
             migrationBuilder.CreateTable(
                 name: "UserCosmeticItems",
                 columns: table => new
@@ -142,7 +138,12 @@ namespace Fitly.API.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            // Create indexes
+            migrationBuilder.CreateIndex(
+                name: "IX_Chibis_UserId",
+                table: "Chibis",
+                column: "UserId",
+                unique: true);
+
             migrationBuilder.CreateIndex(
                 name: "IX_CosmeticItems_Category",
                 table: "CosmeticItems",
@@ -152,12 +153,6 @@ namespace Fitly.API.Migrations
                 name: "IX_CosmeticItems_IsDefault",
                 table: "CosmeticItems",
                 column: "IsDefault");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Chibis_UserId",
-                table: "Chibis",
-                column: "UserId",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_PointsBalances_ChibiId",
