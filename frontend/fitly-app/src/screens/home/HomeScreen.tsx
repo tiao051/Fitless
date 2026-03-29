@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -28,12 +27,10 @@ export default function HomeScreen({ navigation }: any) {
         const summary = await NutritionService.getDailySummary(parseInt(userIdStr, 10), today);
         setTodaySummary(summary);
       }
-
       const weeklyPlan = await WorkoutPlanService.getCurrentWeeklyPlan();
       setWeekPlan(weeklyPlan?.dayPlans || []);
     } catch (error) {
       const status = (error as any)?.response?.status;
-      // 401 is handled globally by apiClient interceptor.
       if (status !== 401) {
         console.error('Error loading home data:', error);
       }
@@ -48,7 +45,6 @@ export default function HomeScreen({ navigation }: any) {
       setLoading(true);
       loadData();
     });
-
     return unsubscribe;
   }, [loadData, navigation]);
 
@@ -60,7 +56,7 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const calorieTarget = 2200;
-  const proteinTarget = 160;
+  const proteinTarget = 190;
   const carbsTarget = 280;
   const fatTarget = 70;
 
@@ -70,43 +66,6 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const getTodayPlan = () => weekPlan.find((plan) => plan.dayOfWeek === getTodayIndex());
-
-  const getDayTitle = (dayPlan: DayPlanResponse | undefined) => {
-    if (!dayPlan) return 'No plan yet';
-    if (dayPlan.isRestDay) return 'Recovery Day';
-    if (dayPlan.planName?.trim()) return dayPlan.planName;
-    if (dayPlan.customPlanLabel?.trim()) return dayPlan.customPlanLabel;
-    if (dayPlan.dayType === 'cardio') return 'Cardio Session';
-    if (dayPlan.dayType === 'training') return 'Strength Session';
-    if ((dayPlan.plannedExercises?.length || 0) > 0) return 'Training Session';
-    return 'No plan yet';
-  };
-
-  const getDaySubtitle = (dayPlan: DayPlanResponse | undefined) => {
-    if (!dayPlan) return 'Set up your day plan';
-    if (dayPlan.isRestDay) return 'Rest and recover';
-
-    const count = dayPlan.plannedExercises?.length || 0;
-    if (count === 0) return 'No exercises added';
-
-    const estimateMins = Math.max(20, count * 15);
-    return `${count} exercises (Est. ${estimateMins} min)`;
-  };
-
-  const getPlanIcon = (dayPlan: DayPlanResponse | undefined) => {
-    if (!dayPlan) return '•';
-    if (dayPlan.isRestDay || dayPlan.dayType === 'rest') return '😴';
-
-    const source = `${dayPlan.planName || ''} ${dayPlan.customPlanLabel || ''}`.toLowerCase();
-    if (dayPlan.dayType === 'cardio' || source.includes('cardio') || source.includes('run')) return '🏃';
-    if (source.includes('chest') || source.includes('push')) return '🫀';
-    if (source.includes('back') || source.includes('pull')) return '🦍';
-    if (source.includes('leg') || source.includes('lower')) return '🦵';
-    if (source.includes('upper')) return '🏋️';
-    if (source.includes('core') || source.includes('abs')) return '⚡';
-    if ((dayPlan.plannedExercises?.length || 0) > 0 || dayPlan.dayType === 'training' || dayPlan.dayType === 'custom') return '🏋️';
-    return '•';
-  };
 
   const weekDays = useMemo(
     () => [
@@ -121,11 +80,41 @@ export default function HomeScreen({ navigation }: any) {
     []
   );
 
-  const todayPlan = getTodayPlan();
-  const todayPlanTitle = getDayTitle(todayPlan);
-  const todayPlanSubtitle = getDaySubtitle(todayPlan);
-  const todayProgress = Math.min(100, Math.round(((todayPlan?.plannedExercises?.length || 0) > 0 ? 0 : 0)));
-  const caloriesPercent = Math.min(100, Math.round((nutrition.calories / calorieTarget) * 100));
+  const getStreakCount = () => {
+    let count = 0;
+    const today = getTodayIndex();
+    for (let i = 0; i < 7; i++) {
+      const idx = (today - i + 7) % 7;
+      const plan = weekPlan.find((p) => p.dayOfWeek === idx);
+      if (plan && !plan.isRestDay && (plan.plannedExercises?.length || 0) > 0) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count;
+  };
+
+  const getDayOfWeek = () => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[new Date().getDay()];
+  };
+
+  const getTimeGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const getHour = () => {
+    const h = new Date().getHours();
+    const h12 = h % 12 || 12;
+    const period = h >= 12 ? 'pm' : 'am';
+    return `${h12} ${period}`;
+  };
+
+  const hasTrackedToday = nutrition.calories > 0;
 
   if (loading) {
     return (
@@ -135,138 +124,170 @@ export default function HomeScreen({ navigation }: any) {
     );
   }
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
+  const todayPlan = getTodayPlan();
+  const streakCount = getStreakCount();
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {
-          setRefreshing(true);
-          loadData();
-        }} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              loadData();
+            }}
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerRow}>
-          <View style={styles.heroSection}>
-            <Text style={styles.greeting}>Hi, Athlete!</Text>
-            <Text style={styles.subGreeting}>{getGreeting()}! Let's conquer today.</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Hi, Athlete</Text>
+            <Text style={styles.dayGreeting}>
+              {getDayOfWeek()} · {getTimeGreeting()}
+            </Text>
           </View>
-          <View style={styles.headerActions}>
-            <Pressable style={styles.iconButton} onPress={() => navigation.navigate('Profile')}>
-              <Text style={styles.iconButtonText}>👤</Text>
-            </Pressable>
-            <Pressable
-              style={styles.iconButton}
-              onPress={() => Alert.alert('Notifications', 'Notification center will be available soon.')}
-            >
-              <Text style={styles.iconButtonText}>🔔</Text>
-            </Pressable>
-          </View>
+          {streakCount > 0 && (
+            <View style={styles.streakBadge}>
+              <Text style={styles.streakText}>{streakCount} day streak</Text>
+            </View>
+          )}
         </View>
 
+        {/* Nudge — only show if nothing tracked yet */}
+        {!hasTrackedToday && (
+          <View style={styles.nudgeCard}>
+            <View style={styles.nudgeAccent} />
+            <View style={styles.nudgeContent}>
+              <Text style={styles.nudgeTitle}>
+                It's {getHour()} — nothing tracked yet
+              </Text>
+              <Text style={styles.nudgeSub}>
+                Don't forget to add your meals today
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Calories Today */}
         <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>Today's Workout</Text>
-            <Pressable onPress={() => navigation.navigate('WorkoutPlan')}>
-              <Text style={styles.cardHeaderLink}>View Plan</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardLabel}>Calories today</Text>
+            <Pressable onPress={() => navigation.navigate('NutritionSummary')}>
+              <Text style={styles.cardLink}>View summary</Text>
             </Pressable>
           </View>
 
-          <View style={styles.focusSummaryRow}>
-            <View style={styles.focusSummaryLeft}>
-              <Text style={styles.focusTitle}>{todayPlanTitle}</Text>
-              <Text style={styles.focusSubtitle}>{todayPlanSubtitle}</Text>
-            </View>
-            <View style={styles.progressRing}>
-              <Text style={styles.progressText}>{todayProgress}%</Text>
-              <Text style={styles.progressCaption}>COMPLETE</Text>
-            </View>
+          <Text style={styles.calorieValue}>
+            {Math.round(nutrition.calories)}
+            <Text style={styles.calorieOf}>  / {calorieTarget} kcal</Text>
+          </Text>
+
+          {!hasTrackedToday && (
+            <Text style={styles.calorieHint}>Start adding meals to track your progress</Text>
+          )}
+
+          <View style={styles.macroList}>
+            {[
+              { label: 'Protein', value: nutrition.protein, target: proteinTarget },
+              { label: 'Carbs', value: nutrition.carbs, target: carbsTarget },
+              { label: 'Fat', value: nutrition.fat, target: fatTarget },
+            ].map((macro) => (
+              <View key={macro.label} style={styles.macroRow}>
+                <Text style={styles.macroName}>{macro.label}</Text>
+                <View style={styles.macroBarBg}>
+                  <View
+                    style={[
+                      styles.macroBarFill,
+                      { width: `${Math.min((macro.value / macro.target) * 100, 100)}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.macroVal}>
+                  {Math.round(macro.value)}/{macro.target}g
+                </Text>
+              </View>
+            ))}
           </View>
 
           <Pressable
-            style={styles.primaryCtaButton}
-            onPress={() => navigation.navigate('TodayWorkout')}
+            style={styles.addMealBtn}
+            onPress={() => navigation.navigate('LogNutrition')}
           >
-            <Text style={styles.primaryCtaText}>START TODAY'S WORKOUT</Text>
+            <Text style={styles.addMealText}>Add a meal</Text>
           </Pressable>
         </View>
 
+        {/* Today's Workout */}
         <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>Weekly Snapshot</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardLabel}>Today's workout</Text>
             <Pressable onPress={() => navigation.navigate('WorkoutPlan')}>
-              <Text style={styles.cardHeaderLink}>View Full Week</Text>
+              <Text style={styles.cardLink}>View plan</Text>
             </Pressable>
+          </View>
+
+          <View style={styles.workoutRow}>
+            <View style={styles.workoutLeft}>
+              <Text style={styles.workoutTitle}>
+                {todayPlan && !todayPlan.isRestDay && (todayPlan.plannedExercises?.length || 0) > 0
+                  ? todayPlan.plannedExercises?.length + ' exercises planned'
+                  : 'Rest day? Or set a plan.'}
+              </Text>
+              <Text style={styles.workoutSub}>
+                {todayPlan && !todayPlan.isRestDay && (todayPlan.plannedExercises?.length || 0) > 0
+                  ? 'Tap to start your session'
+                  : 'No workout scheduled yet'}
+              </Text>
+            </View>
+            <Pressable
+              style={styles.setPlanBtn}
+              onPress={() => navigation.navigate('WorkoutPlan')}
+            >
+              <Text style={styles.setPlanText}>+ Set plan</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* This Week */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardLabel}>This week</Text>
+            {streakCount > 0 && (
+              <Text style={styles.streakIndicator}>{streakCount} in a row</Text>
+            )}
           </View>
 
           <View style={styles.weekRow}>
             {weekDays.map((day) => {
-              const plan = weekPlan.find((item) => item.dayOfWeek === day.index);
+              const plan = weekPlan.find((p) => p.dayOfWeek === day.index);
+              const isCompleted =
+                plan && !plan.isRestDay && (plan.plannedExercises?.length || 0) > 0;
               const isToday = day.index === getTodayIndex();
-              const isSet = !!plan && (plan.isRestDay || (plan.plannedExercises?.length || 0) > 0 || !!plan.dayType);
 
               return (
-                <View
-                  key={day.label}
-                  style={[
-                    styles.weekDayCard,
-                    isSet ? styles.weekDayCardPlanned : styles.weekDayCardEmpty,
-                    isToday && styles.weekDayCardToday,
-                  ]}
-                >
-                  <Text style={styles.weekDayLabel}>{day.label}</Text>
-                  <Text style={styles.weekDayIcon}>{getPlanIcon(plan)}</Text>
+                <View key={day.label} style={styles.dayCol}>
+                  <View
+                    style={[
+                      styles.dayBubble,
+                      isCompleted && styles.dayBubbleDone,
+                      isToday && !isCompleted && styles.dayBubbleToday,
+                    ]}
+                  >
+                    {isCompleted && (
+                      <Text style={styles.dayCheckmark}>✓</Text>
+                    )}
+                    {!isCompleted && isToday && (
+                      <View style={styles.todayDot} />
+                    )}
+                  </View>
+                  <Text style={styles.dayName}>{day.label[0]}</Text>
                 </View>
               );
             })}
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>Nutrition Summary</Text>
-            <Pressable onPress={() => navigation.navigate('DailyNutrition')}>
-              <Text style={styles.cardHeaderLink}>View Daily Summary</Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.nutritionTopRow}>
-            <View style={styles.calorieCircleWrap}>
-              <View style={styles.calorieCircle}>
-                <Text style={styles.calorieMainText}>{Math.round(nutrition.calories)}/{calorieTarget}</Text>
-                <Text style={styles.calorieSubText}>kcal</Text>
-              </View>
-              <View style={styles.caloriePercentBadge}>
-                <Text style={styles.caloriePercentText}>{caloriesPercent}%</Text>
-              </View>
-            </View>
-            <View style={styles.macrosList}>
-              <Text style={styles.macroText}>P: {nutrition.protein.toFixed(0)}/{proteinTarget}g</Text>
-              <Text style={styles.macroText}>C: {nutrition.carbs.toFixed(0)}/{carbsTarget}g</Text>
-              <Text style={styles.macroText}>F: {nutrition.fat.toFixed(0)}/{fatTarget}g</Text>
-            </View>
-          </View>
-
-          <View style={styles.nutritionActionsRow}>
-            <Pressable
-              style={[styles.quickActionButton, styles.primaryAction]}
-              onPress={() => navigation.navigate('LogNutrition')}
-            >
-              <Text style={[styles.quickActionText, styles.primaryActionText]}>QUICK ADD MEAL</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.quickActionButton, styles.secondaryAction]}
-              onPress={() => navigation.navigate('FoodSearch')}
-            >
-              <Text style={[styles.quickActionText, { color: '#0E0E10' }]}>Food Search</Text>
-            </Pressable>
           </View>
         </View>
       </ScrollView>
@@ -277,260 +298,248 @@ export default function HomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F5F7',
+    backgroundColor: '#F6F6F4',
   },
   center: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 24,
-    gap: 14,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 32,
+    gap: 10,
   },
-  headerRow: {
+
+  // Header
+  header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 2,
-  },
-  heroSection: {
-    flex: 1,
+    alignItems: 'flex-start',
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
   greeting: {
     fontSize: 32,
-    lineHeight: 36,
-    fontWeight: '800',
-    color: '#0E0E10',
-    letterSpacing: -0.4,
-  },
-  subGreeting: {
-    marginTop: 6,
-    fontSize: 15,
-    color: '#8D8E94',
     fontWeight: '500',
+    color: '#1A1A1A',
+    letterSpacing: -0.3,
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
+  dayGreeting: {
+    fontSize: 16,
+    color: '#BBB',
+    marginTop: 3,
   },
-  iconButton: {
-    width: 40,
-    height: 40,
+  streakBadge: {
+    backgroundColor: '#FF4500',
+    paddingVertical: 6,
+    paddingHorizontal: 13,
     borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#101012',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconButtonText: {
-    fontSize: 17,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#101012',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0E0E10',
-  },
-  cardHeaderLink: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0E0E10',
-    textDecorationLine: 'underline',
-  },
-  focusSummaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  focusSummaryLeft: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  focusTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0E0E10',
-  },
-  focusSubtitle: {
     marginTop: 4,
+  },
+  streakText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#8D8E94',
+    color: '#fff',
   },
-  progressRing: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    borderWidth: 3,
-    borderColor: '#101012',
-    backgroundColor: '#F5F5F7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressText: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#0E0E10',
-  },
-  progressCaption: {
-    marginTop: 1,
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#8D8E94',
-  },
-  primaryCtaButton: {
-    minHeight: 46,
+
+  // Nudge
+  nudgeCard: {
+    backgroundColor: '#fff',
     borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#0E0E10',
-    backgroundColor: '#0E0E10',
+    borderWidth: 0.5,
+    borderColor: '#EBEBEB',
+    borderLeftWidth: 2,
+    borderLeftColor: '#FF4500',
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  nudgeAccent: {
+    width: 0,
+  },
+  nudgeContent: {
+    padding: 14,
+  },
+  nudgeTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1A1A1A',
+  },
+  nudgeSub: {
+    fontSize: 14,
+    color: '#BBB',
+    marginTop: 3,
+  },
+
+  // Shared card
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    borderWidth: 0.5,
+    borderColor: '#EBEBEB',
+    padding: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 16,
   },
-  primaryCtaText: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
+  cardLabel: {
+    fontSize: 16,
+    color: '#BBB',
   },
+  cardLink: {
+    fontSize: 14,
+    color: '#BBB',
+  },
+
+  // Calories
+  calorieValue: {
+    fontSize: 42,
+    fontWeight: '500',
+    color: '#1A1A1A',
+    letterSpacing: -0.5,
+    marginBottom: 5,
+  },
+  calorieOf: {
+    fontSize: 17,
+    fontWeight: '400',
+    color: '#CCC',
+  },
+  calorieHint: {
+    fontSize: 14,
+    color: '#BBB',
+    marginBottom: 14,
+  },
+
+  // Macro bars
+  macroList: {
+    gap: 12,
+    marginTop: 6,
+    marginBottom: 16,
+  },
+  macroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  macroName: {
+    fontSize: 14,
+    color: '#BBB',
+    width: 46,
+  },
+  macroBarBg: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#F0F0EE',
+    borderRadius: 2,
+  },
+  macroBarFill: {
+    height: 4,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 2,
+  },
+  macroVal: {
+    fontSize: 14,
+    color: '#CCC',
+    width: 52,
+    textAlign: 'right',
+  },
+
+  // Add meal button
+  addMealBtn: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  addMealText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#fff',
+    letterSpacing: 0.02,
+  },
+
+  // Workout
+  workoutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  workoutLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  workoutTitle: {
+    fontSize: 20,
+    fontWeight: '500',
+    color: '#1A1A1A',
+  },
+  workoutSub: {
+    fontSize: 16,
+    color: '#CCC',
+    marginTop: 3,
+  },
+  setPlanBtn: {
+    backgroundColor: '#F6F6F4',
+    borderWidth: 0.5,
+    borderColor: '#E0E0DC',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  setPlanText: {
+    fontSize: 14,
+    color: '#888',
+  },
+
+  // Week
   weekRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  dayCol: {
+    alignItems: 'center',
     gap: 8,
   },
-  weekDayCard: {
-    flex: 1,
-    minHeight: 72,
-    borderRadius: 12,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  weekDayCardPlanned: {
-    backgroundColor: '#F0F0F3',
-    borderColor: '#101012',
-  },
-  weekDayCardEmpty: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D6D7DC',
-  },
-  weekDayCardToday: {
-    backgroundColor: '#DFF0E8',
-  },
-  weekDayLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#0E0E10',
-  },
-  weekDayIcon: {
-    marginTop: 5,
-    fontSize: 18,
-  },
-  nutritionTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  calorieCircleWrap: {
-    position: 'relative',
-  },
-  calorieCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 3,
-    borderColor: '#101012',
-    backgroundColor: '#F5F5F7',
+  dayBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    backgroundColor: '#F6F6F4',
+    borderWidth: 0.5,
+    borderColor: '#EBEBEB',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  calorieMainText: {
+  dayBubbleDone: {
+    backgroundColor: '#1A1A1A',
+    borderColor: '#1A1A1A',
+  },
+  dayBubbleToday: {
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: '#1A1A1A',
+  },
+  dayCheckmark: {
     fontSize: 14,
-    fontWeight: '800',
-    color: '#0E0E10',
+    color: '#fff',
+    fontWeight: '500',
   },
-  calorieSubText: {
+  todayDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#1A1A1A',
+  },
+  dayName: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#8D8E94',
+    color: '#CCC',
   },
-  caloriePercentBadge: {
-    position: 'absolute',
-    bottom: -6,
-    right: -8,
-    minWidth: 38,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#101012',
-    backgroundColor: '#EAF5EF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  caloriePercentText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#0E0E10',
-  },
-  macrosList: {
-    flex: 1,
-    marginLeft: 12,
-    gap: 6,
-  },
-  macroText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0E0E10',
-  },
-  nutritionActionsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  quickActionButton: {
-    flex: 1,
-    borderRadius: 12,
-    borderWidth: 2,
-    minHeight: 44,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  primaryAction: {
-    backgroundColor: '#0E0E10',
-    borderColor: '#0E0E10',
-  },
-  secondaryAction: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#101012',
-  },
-  quickActionText: {
-    fontSize: 12,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  primaryActionText: {
-    color: '#FFFFFF',
+  streakIndicator: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#FF4500',
   },
 });

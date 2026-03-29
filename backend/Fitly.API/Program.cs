@@ -70,6 +70,9 @@ builder.Services.AddScoped<IWorkoutService, WorkoutService>();
 builder.Services.AddScoped<IWorkoutPlanService, WorkoutPlanService>();
 builder.Services.AddScoped<INutritionService, NutritionService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IChibiService, ChibiService>();
+builder.Services.AddScoped<IPointsService, PointsService>();
+builder.Services.AddScoped<ICosmeticShopService, CosmeticShopService>();
 builder.Services.AddScoped<FoodSeeder>();
 builder.Services.AddScoped<ExerciseSeeder>();
 

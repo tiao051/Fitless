@@ -14,5 +14,6 @@ namespace Fitly.API.Models
         public ICollection<Workout> Workouts { get; set; } = new List<Workout>();
         public ICollection<WorkoutPlan> WorkoutPlans { get; set; } = new List<WorkoutPlan>();
         public ICollection<NutritionLog> NutritionLogs { get; set; } = new List<NutritionLog>();
+        public Chibi? Chibi { get; set; }
     }
 }

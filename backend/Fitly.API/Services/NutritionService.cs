@@ -124,8 +124,8 @@ namespace Fitly.API.Services
         /// </summary>
         public async Task<DailyNutritionSummaryResponse> GetDailyNutritionSummaryAsync(int userId, DateTime date)
         {
-            // Normalize date to start of day
-            var startOfDay = date.Date;
+            // Normalize date to start of day and ensure UTC
+            var startOfDay = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
             var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
 
             var logs = await _context.NutritionLogs

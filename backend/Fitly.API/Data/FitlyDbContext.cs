@@ -18,6 +18,11 @@ namespace Fitly.API.Data
         public DbSet<PlannedExercise> PlannedExercises { get; set; }
         public DbSet<Food> Foods { get; set; }
         public DbSet<NutritionLog> NutritionLogs { get; set; }
+        public DbSet<Chibi> Chibis { get; set; }
+        public DbSet<PointsBalance> PointsBalances { get; set; }
+        public DbSet<PointsTransaction> PointsTransactions { get; set; }
+        public DbSet<CosmeticItem> CosmeticItems { get; set; }
+        public DbSet<UserCosmeticItem> UserCosmeticItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -157,6 +162,93 @@ namespace Fitly.API.Data
                     .WithMany(f => f.NutritionLogs)
                     .HasForeignKey(e => e.FoodId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Chibi
+            modelBuilder.Entity<Chibi>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ShoulderWidth).IsRequired();
+                entity.Property(e => e.CoreDefinition).IsRequired();
+                entity.Property(e => e.WaistSize).IsRequired();
+                entity.Property(e => e.LegMuscle).IsRequired();
+                entity.Property(e => e.ArmMuscle).IsRequired();
+                entity.HasOne(e => e.User)
+                    .WithOne(u => u.Chibi)
+                    .HasForeignKey<Chibi>(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.PointsBalance)
+                    .WithOne(pb => pb.Chibi)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasMany(e => e.OwnedCosmetics)
+                    .WithOne(uc => uc.Chibi)
+                    .HasForeignKey(uc => uc.ChibiId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasMany(e => e.PointsTransactions)
+                    .WithOne(pt => pt.Chibi)
+                    .HasForeignKey(pt => pt.ChibiId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // PointsBalance
+            modelBuilder.Entity<PointsBalance>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Balance).IsRequired();
+                entity.Property(e => e.TotalEarned).IsRequired();
+                entity.Property(e => e.TotalSpent).IsRequired();
+                entity.HasOne(e => e.Chibi)
+                    .WithOne(c => c.PointsBalance)
+                    .HasForeignKey<PointsBalance>(e => e.ChibiId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // PointsTransaction
+            modelBuilder.Entity<PointsTransaction>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TransactionType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Points).IsRequired();
+                entity.Property(e => e.Description).HasMaxLength(255);
+                entity.Property(e => e.RelatedEntityId).HasMaxLength(100);
+                entity.HasOne(e => e.Chibi)
+                    .WithMany(c => c.PointsTransactions)
+                    .HasForeignKey(e => e.ChibiId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => new { e.ChibiId, e.CreatedAt });
+            });
+
+            // CosmeticItem
+            modelBuilder.Entity<CosmeticItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Category).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.ImageUrl).HasMaxLength(500);
+                entity.Property(e => e.Rarity).HasMaxLength(20);
+                entity.Property(e => e.CostPoints).IsRequired();
+                entity.Property(e => e.IsDefault).IsRequired();
+                entity.HasIndex(e => e.Category);
+                entity.HasIndex(e => e.IsDefault);
+                entity.HasMany(e => e.UserOwners)
+                    .WithOne(uc => uc.CosmeticItem)
+                    .HasForeignKey(uc => uc.CosmeticItemId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // UserCosmeticItem
+            modelBuilder.Entity<UserCosmeticItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasOne(e => e.Chibi)
+                    .WithMany(c => c.OwnedCosmetics)
+                    .HasForeignKey(e => e.ChibiId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.CosmeticItem)
+                    .WithMany(ci => ci.UserOwners)
+                    .HasForeignKey(e => e.CosmeticItemId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => new { e.ChibiId, e.IsEquipped });
             });
         }
     }
