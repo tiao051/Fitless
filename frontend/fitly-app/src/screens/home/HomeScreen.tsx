@@ -7,18 +7,21 @@ import {
   StyleSheet,
   Text,
   View,
+  ToastAndroid,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NutritionService, DailyNutritionSummary } from '../../services/nutritionService';
 import { DayPlanResponse, WorkoutPlanService } from '../../services/workoutPlanService';
 import { ChibiPlaceholder } from '../../components/domain/ChibiPlaceholder';
+import { QuickAddNutritionModal } from '../../components/domain/QuickAddNutritionModal';
 
 export default function HomeScreen({ navigation }: any) {
   const [todaySummary, setTodaySummary] = useState<DailyNutritionSummary | null>(null);
   const [weekPlan, setWeekPlan] = useState<DayPlanResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -227,7 +230,7 @@ export default function HomeScreen({ navigation }: any) {
 
           <Pressable
             style={styles.primaryBtn}
-            onPress={() => navigation.navigate('LogNutrition')}
+            onPress={() => setModalVisible(true)}
           >
             <Text style={styles.primaryBtnText}>Add Meal</Text>
           </Pressable>
@@ -314,6 +317,19 @@ export default function HomeScreen({ navigation }: any) {
           </View>
         </View>
       </ScrollView>
+
+      <QuickAddNutritionModal
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false);
+          loadData(); // Refresh data after adding meal
+        }}
+        onSuccess={(message) => {
+          ToastAndroid.show(message, ToastAndroid.SHORT);
+          setModalVisible(false);
+          loadData();
+        }}
+      />
     </SafeAreaView>
   );
 }
