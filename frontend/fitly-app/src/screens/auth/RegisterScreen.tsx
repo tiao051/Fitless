@@ -39,7 +39,6 @@ export default function RegisterScreen({ navigation }: any) {
     setLoading(true);
     try {
       await auth.signUp(email.trim(), password, displayName.trim(), '-');
-      navigation.navigate('Onboarding');
     } catch (error: any) {
       Alert.alert('Registration failed', error?.message || 'Please try again.');
     } finally {

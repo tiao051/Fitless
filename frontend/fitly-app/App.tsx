@@ -201,7 +201,10 @@ export default function App() {
       },
       signUp: async (email: string, password: string, firstName: string, lastName: string) => {
         try {
-          await AuthService.register(email, password, firstName, lastName);
+          const response = await AuthService.register(email, password, firstName, lastName);
+          dispatch({ type: 'SIGN_IN', token: response.token });
+          await AsyncStorage.setItem('userToken', response.token);
+          await AsyncStorage.setItem('userId', response.user.id.toString());
         } catch (e) {
           throw e;
         }
