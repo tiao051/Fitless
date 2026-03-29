@@ -31,20 +31,34 @@ function LoggedInTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: true,
-        tabBarActiveTintColor: '#0E0E10',
-        tabBarInactiveTintColor: '#8D8E94',
+        tabBarActiveTintColor: '#1A1A1A',
+        tabBarInactiveTintColor: '#BEBEBE',
         tabBarStyle: {
-          borderTopColor: '#E6E6EA',
-          backgroundColor: '#F5F5F7',
+          borderTopWidth: 1,
+          borderTopColor: '#E8E8E6',
+          backgroundColor: '#FAFAF8',
+          paddingBottom: 8,
+          paddingTop: 8,
+          height: 72,
+          elevation: 0,
+          shadowColor: 'transparent',
         },
         headerStyle: {
-          backgroundColor: '#F5F5F7',
+          backgroundColor: '#FAFAF8',
           shadowColor: 'transparent',
           elevation: 0,
+          borderBottomWidth: 1,
+          borderBottomColor: '#E8E8E6',
         },
         headerTitleStyle: {
-          fontWeight: '800',
-          color: '#0E0E10',
+          fontWeight: '700',
+          fontSize: 16,
+          color: '#1A1A1A',
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 4,
         },
       }}
     >
@@ -55,8 +69,8 @@ function LoggedInTabs() {
           headerShown: false,
           title: 'Today',
           tabBarLabel: 'Today',
-          tabBarIcon: () => (
-            <Text style={{ fontSize: 24 }}>📅</Text>
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ fontSize: 24, color }}>📅</Text>
           ),
         }}
       />
@@ -66,8 +80,8 @@ function LoggedInTabs() {
         options={{
           title: 'Add Meal',
           tabBarLabel: 'Add',
-          tabBarIcon: () => (
-            <Text style={{ fontSize: 24 }}>➕</Text>
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ fontSize: 24, color }}>➕</Text>
           ),
         }}
       />
@@ -77,8 +91,8 @@ function LoggedInTabs() {
         options={{
           title: 'Foods',
           tabBarLabel: 'Foods',
-          tabBarIcon: () => (
-            <Text style={{ fontSize: 24 }}>🍎</Text>
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ fontSize: 24, color }}>🍎</Text>
           ),
         }}
       />
@@ -88,8 +102,8 @@ function LoggedInTabs() {
         options={{
           title: 'Workouts',
           tabBarLabel: 'Workouts',
-          tabBarIcon: () => (
-            <Text style={{ fontSize: 24 }}>💪</Text>
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ fontSize: 24, color }}>💪</Text>
           ),
         }}
       />
@@ -99,8 +113,8 @@ function LoggedInTabs() {
         options={{
           title: 'Profile',
           tabBarLabel: 'Profile',
-          tabBarIcon: () => (
-            <Text style={{ fontSize: 24 }}>👤</Text>
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ fontSize: 24, color }}>👤</Text>
           ),
         }}
       />

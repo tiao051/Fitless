@@ -103,9 +103,9 @@ export default function HomeScreen({ navigation }: any) {
 
   const getTimeGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return 'Good morning.';
+    if (hour < 17) return 'Good afternoon.';
+    return 'Good evening.';
   };
 
   const getHour = () => {
@@ -270,7 +270,7 @@ export default function HomeScreen({ navigation }: any) {
               <Text style={styles.workoutStatusIcon}>
                 {todayPlan && !todayPlan.isRestDay && (todayPlan.plannedExercises?.length || 0) > 0
                   ? '⚡'
-                  : '—'}
+                  : 'zZz'}
               </Text>
             </View>
           </View>
@@ -343,10 +343,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   greeting: {
-    fontSize: 36,
-    fontWeight: '300',
+    fontSize: 42,
+    fontWeight: '600',
     color: '#1A1A1A',
-    letterSpacing: -0.5,
+    letterSpacing: -0.7,
   },
   subGreeting: {
     fontSize: 14,
