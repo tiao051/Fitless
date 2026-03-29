@@ -74,12 +74,13 @@ export default function ProfileScreen() {
           <View style={styles.avatarWrap}>
             <Text style={styles.avatarText}>
               {user.firstName.charAt(0)}
-              {user.lastName.charAt(0)}
+              {user.lastName && user.lastName !== '-' ? user.lastName.charAt(0) : ''}
             </Text>
           </View>
 
           <Text style={styles.name}>
-            {user.firstName} {user.lastName}
+            {user.firstName}
+            {user.lastName && user.lastName !== '-' ? ` ${user.lastName}` : ''}
           </Text>
           <Text style={styles.email}>{user.email}</Text>
 

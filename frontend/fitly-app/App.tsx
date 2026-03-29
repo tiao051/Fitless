@@ -78,6 +78,7 @@ function LoggedInTabs() {
         name="LogNutrition" 
         component={LogNutritionScreen}
         options={{
+          headerShown: false,
           title: 'Add Meal',
           tabBarLabel: 'Add',
           tabBarIcon: ({ color, size }) => (
@@ -89,6 +90,7 @@ function LoggedInTabs() {
         name="FoodSearch" 
         component={FoodSearchScreen}
         options={{
+          headerShown: false,
           title: 'Foods',
           tabBarLabel: 'Foods',
           tabBarIcon: ({ color, size }) => (
@@ -100,6 +102,7 @@ function LoggedInTabs() {
         name="WorkoutPlan" 
         component={WorkoutPlanScreen}
         options={{
+          headerShown: false,
           title: 'Workouts',
           tabBarLabel: 'Workouts',
           tabBarIcon: ({ color, size }) => (
@@ -111,6 +114,7 @@ function LoggedInTabs() {
         name="Profile" 
         component={ProfileScreen}
         options={{
+          headerShown: false,
           title: 'Profile',
           tabBarLabel: 'Profile',
           tabBarIcon: ({ color, size }) => (
