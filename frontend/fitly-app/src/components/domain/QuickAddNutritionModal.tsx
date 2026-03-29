@@ -139,10 +139,18 @@ export function QuickAddNutritionModal({
       const userId = parseInt(userIdStr, 10);
       const mealType = 'breakfast'; // TODO: Allow user to select meal type
 
+      console.log('Saving meal:', { userId, selectedFood: selectedFood.id, gram, mealType, logDate });
       await NutritionService.logNutrition(userId, selectedFood.id, gram, mealType, logDate);
+      console.log('Meal saved successfully');
 
-      onSuccess?.(`Added ${selectedFood.name} - ${nutrition.calories} kcal`);
-      resetModal();
+      const successMessage = `Added ${selectedFood.name} - ${nutrition.calories} kcal`;
+      console.log('Calling onSuccess with:', successMessage);
+      onSuccess?.(successMessage);
+      
+      // Small delay to ensure API has processed before refresh
+      setTimeout(() => {
+        resetModal();
+      }, 500);
     } catch (error) {
       console.error('Save error:', error);
     }

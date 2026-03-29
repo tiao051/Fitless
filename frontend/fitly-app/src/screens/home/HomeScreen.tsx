@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -28,8 +29,10 @@ export default function HomeScreen({ navigation }: any) {
     try {
       const today = new Date().toISOString().split('T')[0];
       const userIdStr = await AsyncStorage.getItem('userId');
+      console.log('Loading nutrition data for:', today, 'userId:', userIdStr);
       if (userIdStr) {
         const summary = await NutritionService.getDailySummary(parseInt(userIdStr, 10), today);
+        console.log('Daily summary loaded:', summary);
         setTodaySummary(summary);
       }
       const weeklyPlan = await WorkoutPlanService.getCurrentWeeklyPlan();
@@ -53,11 +56,11 @@ export default function HomeScreen({ navigation }: any) {
     return unsubscribe;
   }, [loadData, navigation]);
 
-  const nutrition = todaySummary?.totalNutrition || {
-    calories: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0,
+  const nutrition = {
+    calories: todaySummary?.totalCalories || 0,
+    protein: todaySummary?.totalProtein || 0,
+    carbs: todaySummary?.totalCarbs || 0,
+    fat: todaySummary?.totalFat || 0,
   };
 
   const calorieTarget = 2200;
@@ -326,13 +329,18 @@ export default function HomeScreen({ navigation }: any) {
           loadData(); // Refresh data after adding meal
         }}
         onSuccess={(message) => {
+          console.log('onSuccess called with:', message);
           if (Platform.OS === 'android') {
             ToastAndroid.show(message, ToastAndroid.SHORT);
           } else {
-            console.log('Success:', message);
+            Alert.alert('✓', message, [{ text: 'OK' }]);
           }
           setModalVisible(false);
-          loadData();
+          // Delay refresh to ensure backend has processed
+          setTimeout(() => {
+            console.log('Refreshing nutrition data after meal added');
+            loadData();
+          }, 600);
         }}
       />
     </SafeAreaView>
