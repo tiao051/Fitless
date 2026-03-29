@@ -6,7 +6,7 @@ namespace Fitly.API.Utilities
     public static class FileLogger
     {
         private static readonly string LogDirectory = Path.Combine(
-            Directory.GetCurrentDirectory(), "..", "logs", "api");
+            Directory.GetCurrentDirectory(), "logs", "api");
         private static readonly string LogFile = Path.Combine(LogDirectory, "app.log");
 
         static FileLogger()

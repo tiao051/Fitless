@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NutritionService, DailyNutritionSummary } from '../../services/nutritionService';
 import { DayPlanResponse, WorkoutPlanService } from '../../services/workoutPlanService';
+import { ChibiPlaceholder } from '../../components/domain/ChibiPlaceholder';
 
 export default function HomeScreen({ navigation }: any) {
   const [todaySummary, setTodaySummary] = useState<DailyNutritionSummary | null>(null);
@@ -145,50 +146,59 @@ export default function HomeScreen({ navigation }: any) {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Hi, Athlete</Text>
-            <Text style={styles.dayGreeting}>
-              {getDayOfWeek()} · {getTimeGreeting()}
+            <Text style={styles.greeting}>
+              {getTimeGreeting()}
+            </Text>
+            <Text style={styles.subGreeting}>
+              {getDayOfWeek()} · {getHour()}
             </Text>
           </View>
           {streakCount > 0 && (
             <View style={styles.streakBadge}>
-              <Text style={styles.streakText}>{streakCount} day streak</Text>
+              <Text style={styles.streakText}>🔥 {streakCount}</Text>
             </View>
           )}
         </View>
 
+        {/* Chibi Placeholder */}
+        <ChibiPlaceholder showLabel={true} />
+
         {/* Nudge — only show if nothing tracked yet */}
         {!hasTrackedToday && (
           <View style={styles.nudgeCard}>
-            <View style={styles.nudgeAccent} />
             <View style={styles.nudgeContent}>
               <Text style={styles.nudgeTitle}>
-                It's {getHour()} — nothing tracked yet
+                Time to fuel up
               </Text>
               <Text style={styles.nudgeSub}>
-                Don't forget to add your meals today
+                Add your first meal of the day
               </Text>
             </View>
+            <Pressable
+              onPress={() => navigation.navigate('LogNutrition')}
+              style={styles.nudgeAction}
+            >
+              <Text style={styles.nudgeActionText}>→</Text>
+            </Pressable>
           </View>
         )}
 
-        {/* Calories Today */}
+        {/* Nutrition Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardLabel}>Calories today</Text>
+            <Text style={styles.cardTitle}>Nutrition</Text>
             <Pressable onPress={() => navigation.navigate('NutritionSummary')}>
-              <Text style={styles.cardLink}>View summary</Text>
+              <Text style={styles.cardAction}>Details →</Text>
             </Pressable>
           </View>
 
-          <Text style={styles.calorieValue}>
-            {Math.round(nutrition.calories)}
-            <Text style={styles.calorieOf}>  / {calorieTarget} kcal</Text>
-          </Text>
-
-          {!hasTrackedToday && (
-            <Text style={styles.calorieHint}>Start adding meals to track your progress</Text>
-          )}
+          <View style={styles.calorieSection}>
+            <Text style={styles.calorieValue}>
+              {Math.round(nutrition.calories)}
+              <Text style={styles.calorieTarget}>/{calorieTarget}</Text>
+            </Text>
+            <Text style={styles.calorieLabel}>kcal</Text>
+          </View>
 
           <View style={styles.macroList}>
             {[
@@ -197,7 +207,12 @@ export default function HomeScreen({ navigation }: any) {
               { label: 'Fat', value: nutrition.fat, target: fatTarget },
             ].map((macro) => (
               <View key={macro.label} style={styles.macroRow}>
-                <Text style={styles.macroName}>{macro.label}</Text>
+                <View style={styles.macroInfo}>
+                  <Text style={styles.macroName}>{macro.label}</Text>
+                  <Text style={styles.macroVal}>
+                    {Math.round(macro.value)}/{macro.target}g
+                  </Text>
+                </View>
                 <View style={styles.macroBarBg}>
                   <View
                     style={[
@@ -206,59 +221,65 @@ export default function HomeScreen({ navigation }: any) {
                     ]}
                   />
                 </View>
-                <Text style={styles.macroVal}>
-                  {Math.round(macro.value)}/{macro.target}g
-                </Text>
               </View>
             ))}
           </View>
 
           <Pressable
-            style={styles.addMealBtn}
+            style={styles.primaryBtn}
             onPress={() => navigation.navigate('LogNutrition')}
           >
-            <Text style={styles.addMealText}>Add a meal</Text>
+            <Text style={styles.primaryBtnText}>Add Meal</Text>
           </Pressable>
         </View>
 
-        {/* Today's Workout */}
+        {/* Workout Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardLabel}>Today's workout</Text>
+            <Text style={styles.cardTitle}>Today's Workout</Text>
             <Pressable onPress={() => navigation.navigate('WorkoutPlan')}>
-              <Text style={styles.cardLink}>View plan</Text>
+              <Text style={styles.cardAction}>Plan →</Text>
             </Pressable>
           </View>
 
-          <View style={styles.workoutRow}>
-            <View style={styles.workoutLeft}>
+          <View style={styles.workoutContent}>
+            <View style={styles.workoutText}>
               <Text style={styles.workoutTitle}>
                 {todayPlan && !todayPlan.isRestDay && (todayPlan.plannedExercises?.length || 0) > 0
-                  ? todayPlan.plannedExercises?.length + ' exercises planned'
-                  : 'Rest day? Or set a plan.'}
+                  ? `${todayPlan.plannedExercises?.length} exercises`
+                  : todayPlan?.isRestDay
+                  ? 'Rest day'
+                  : 'No plan set'}
               </Text>
               <Text style={styles.workoutSub}>
                 {todayPlan && !todayPlan.isRestDay && (todayPlan.plannedExercises?.length || 0) > 0
-                  ? 'Tap to start your session'
-                  : 'No workout scheduled yet'}
+                  ? 'Ready to go'
+                  : todayPlan?.isRestDay
+                  ? 'Recover well'
+                  : 'Create a plan'}
               </Text>
             </View>
-            <Pressable
-              style={styles.setPlanBtn}
-              onPress={() => navigation.navigate('WorkoutPlan')}
+            <View
+              style={[
+                styles.workoutStatus,
+                todayPlan && !todayPlan.isRestDay && (todayPlan.plannedExercises?.length || 0) > 0
+                  ? styles.workoutStatusActive
+                  : styles.workoutStatusInactive,
+              ]}
             >
-              <Text style={styles.setPlanText}>+ Set plan</Text>
-            </Pressable>
+              <Text style={styles.workoutStatusIcon}>
+                {todayPlan && !todayPlan.isRestDay && (todayPlan.plannedExercises?.length || 0) > 0
+                  ? '⚡'
+                  : '—'}
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* This Week */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardLabel}>This week</Text>
-            {streakCount > 0 && (
-              <Text style={styles.streakIndicator}>{streakCount} in a row</Text>
-            )}
+            <Text style={styles.cardTitle}>This Week</Text>
           </View>
 
           <View style={styles.weekRow}>
@@ -269,7 +290,11 @@ export default function HomeScreen({ navigation }: any) {
               const isToday = day.index === getTodayIndex();
 
               return (
-                <View key={day.label} style={styles.dayCol}>
+                <Pressable
+                  key={day.label}
+                  style={styles.dayCol}
+                  onPress={() => navigation.navigate('WorkoutPlan')}
+                >
                   <View
                     style={[
                       styles.dayBubble,
@@ -277,15 +302,13 @@ export default function HomeScreen({ navigation }: any) {
                       isToday && !isCompleted && styles.dayBubbleToday,
                     ]}
                   >
-                    {isCompleted && (
-                      <Text style={styles.dayCheckmark}>✓</Text>
-                    )}
-                    {!isCompleted && isToday && (
-                      <View style={styles.todayDot} />
-                    )}
+                    {isCompleted && <Text style={styles.dayCheckmark}>✓</Text>}
+                    {!isCompleted && isToday && <View style={styles.todayDot} />}
                   </View>
-                  <Text style={styles.dayName}>{day.label[0]}</Text>
-                </View>
+                  <Text style={[styles.dayName, isToday && styles.dayNameToday]}>
+                    {day.label[0]}
+                  </Text>
+                </Pressable>
               );
             })}
           </View>
@@ -298,7 +321,7 @@ export default function HomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F6F6F4',
+    backgroundColor: '#FAFAF8',
   },
   center: {
     justifyContent: 'center',
@@ -306,9 +329,9 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 32,
-    gap: 10,
+    paddingTop: 12,
+    paddingBottom: 40,
+    gap: 16,
   },
 
   // Header
@@ -320,178 +343,211 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   greeting: {
-    fontSize: 32,
-    fontWeight: '500',
+    fontSize: 36,
+    fontWeight: '300',
     color: '#1A1A1A',
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
-  dayGreeting: {
-    fontSize: 16,
-    color: '#BBB',
-    marginTop: 3,
+  subGreeting: {
+    fontSize: 14,
+    color: '#9B9B99',
+    marginTop: 6,
+    fontWeight: '400',
   },
   streakBadge: {
-    backgroundColor: '#FF4500',
-    paddingVertical: 6,
-    paddingHorizontal: 13,
+    backgroundColor: '#FAFAF8',
+    borderWidth: 1,
+    borderColor: '#E8E8E6',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 20,
-    marginTop: 4,
+    marginTop: 2,
   },
   streakText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#fff',
+    fontWeight: '600',
+    color: '#1A1A1A',
   },
 
   // Nudge
   nudgeCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: '#EBEBEB',
-    borderLeftWidth: 2,
-    borderLeftColor: '#FF4500',
+    backgroundColor: '#F5F5F3',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E8E8E6',
+    padding: 16,
     flexDirection: 'row',
-    overflow: 'hidden',
-  },
-  nudgeAccent: {
-    width: 0,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   nudgeContent: {
-    padding: 14,
+    flex: 1,
   },
   nudgeTitle: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#1A1A1A',
   },
   nudgeSub: {
-    fontSize: 14,
-    color: '#BBB',
-    marginTop: 3,
+    fontSize: 13,
+    color: '#9B9B99',
+    marginTop: 4,
+  },
+  nudgeAction: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: '#1A1A1A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
+  },
+  nudgeActionText: {
+    fontSize: 16,
+    color: '#FAFAF8',
+    fontWeight: '600',
   },
 
-  // Shared card
+  // Shared Card
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    borderWidth: 0.5,
-    borderColor: '#EBEBEB',
-    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E8E8E6',
+    padding: 18,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 18,
   },
-  cardLabel: {
+  cardTitle: {
     fontSize: 16,
-    color: '#BBB',
+    fontWeight: '600',
+    color: '#1A1A1A',
+    letterSpacing: 0.4,
   },
-  cardLink: {
-    fontSize: 14,
-    color: '#BBB',
+  cardAction: {
+    fontSize: 13,
+    color: '#9B9B99',
+    fontWeight: '500',
   },
 
-  // Calories
+  // Calories/Nutrition
+  calorieSection: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 20,
+  },
   calorieValue: {
-    fontSize: 42,
-    fontWeight: '500',
+    fontSize: 44,
+    fontWeight: '700',
     color: '#1A1A1A',
-    letterSpacing: -0.5,
-    marginBottom: 5,
+    letterSpacing: -1,
   },
-  calorieOf: {
-    fontSize: 17,
+  calorieTarget: {
+    fontSize: 16,
     fontWeight: '400',
-    color: '#CCC',
+    color: '#BEBEBE',
+    marginLeft: 4,
   },
-  calorieHint: {
-    fontSize: 14,
-    color: '#BBB',
-    marginBottom: 14,
+  calorieLabel: {
+    fontSize: 13,
+    color: '#9B9B99',
+    fontWeight: '500',
+    marginLeft: 8,
   },
 
   // Macro bars
   macroList: {
-    gap: 12,
-    marginTop: 6,
-    marginBottom: 16,
+    gap: 14,
+    marginBottom: 18,
   },
   macroRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
+  macroInfo: {
+    width: 70,
+  },
   macroName: {
-    fontSize: 14,
-    color: '#BBB',
-    width: 46,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1A1A1A',
+  },
+  macroVal: {
+    fontSize: 12,
+    color: '#9B9B99',
+    marginTop: 3,
+    fontWeight: '400',
   },
   macroBarBg: {
     flex: 1,
-    height: 4,
+    height: 6,
     backgroundColor: '#F0F0EE',
-    borderRadius: 2,
+    borderRadius: 3,
   },
   macroBarFill: {
-    height: 4,
+    height: 6,
     backgroundColor: '#1A1A1A',
-    borderRadius: 2,
-  },
-  macroVal: {
-    fontSize: 14,
-    color: '#CCC',
-    width: 52,
-    textAlign: 'right',
+    borderRadius: 3,
   },
 
-  // Add meal button
-  addMealBtn: {
+  // Primary Button
+  primaryBtn: {
     backgroundColor: '#1A1A1A',
-    borderRadius: 12,
-    paddingVertical: 13,
+    borderRadius: 10,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  addMealText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#fff',
-    letterSpacing: 0.02,
+  primaryBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
 
   // Workout
-  workoutRow: {
+  workoutContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 16,
   },
-  workoutLeft: {
+  workoutText: {
     flex: 1,
-    marginRight: 12,
   },
   workoutTitle: {
-    fontSize: 20,
-    fontWeight: '500',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#1A1A1A',
   },
   workoutSub: {
-    fontSize: 16,
-    color: '#CCC',
-    marginTop: 3,
+    fontSize: 13,
+    color: '#9B9B99',
+    marginTop: 4,
+    fontWeight: '400',
   },
-  setPlanBtn: {
-    backgroundColor: '#F6F6F4',
-    borderWidth: 0.5,
-    borderColor: '#E0E0DC',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+  workoutStatus: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
-  setPlanText: {
-    fontSize: 14,
-    color: '#888',
+  workoutStatusActive: {
+    backgroundColor: '#F5F5F3',
+    borderColor: '#E8E8E6',
+  },
+  workoutStatusInactive: {
+    backgroundColor: '#FAFAF8',
+    borderColor: '#E8E8E6',
+  },
+  workoutStatusIcon: {
+    fontSize: 24,
   },
 
   // Week
@@ -504,12 +560,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dayBubble: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    backgroundColor: '#F6F6F4',
-    borderWidth: 0.5,
-    borderColor: '#EBEBEB',
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    backgroundColor: '#F5F5F3',
+    borderWidth: 1,
+    borderColor: '#E8E8E6',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -518,28 +574,28 @@ const styles = StyleSheet.create({
     borderColor: '#1A1A1A',
   },
   dayBubbleToday: {
-    backgroundColor: '#fff',
-    borderWidth: 1.5,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
     borderColor: '#1A1A1A',
   },
   dayCheckmark: {
-    fontSize: 14,
-    color: '#fff',
-    fontWeight: '500',
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   todayDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: '#1A1A1A',
   },
   dayName: {
     fontSize: 12,
-    color: '#CCC',
-  },
-  streakIndicator: {
-    fontSize: 16,
+    color: '#BEBEBE',
     fontWeight: '500',
-    color: '#FF4500',
+  },
+  dayNameToday: {
+    color: '#1A1A1A',
+    fontWeight: '700',
   },
 });

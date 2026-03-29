@@ -123,16 +123,22 @@ using (var scope = app.Services.CreateScope())
         FileLogger.LogInfo("Applying database migrations...");
         
         // Add extra delay to ensure database is fully ready
-        await Task.Delay(2000);
+        await Task.Delay(3000);
         
         try
         {
+            // Check if database connection is working
+            await dbContext.Database.ExecuteSqlRawAsync("SELECT 1");
+            FileLogger.LogInfo("Database connection verified");
+            
+            // Apply migrations
             await dbContext.Database.MigrateAsync();
             FileLogger.LogInfo("Database migrations completed successfully");
         }
         catch (Exception migrationEx)
         {
             FileLogger.LogError($"Migration failed: {migrationEx.GetType().Name} - {migrationEx.Message}", migrationEx);
+            FileLogger.LogError($"Full exception: {migrationEx}", migrationEx);
             throw;
         }
         
