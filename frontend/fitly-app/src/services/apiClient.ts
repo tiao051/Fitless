@@ -1,9 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Prefer full URL from env; fallback to host-based URL for local LAN dev.
-const API_HOST = process.env.EXPO_PUBLIC_API_HOST || '192.168.1.5';
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || `http://${API_HOST}:5062/api`;
+// Use EXPO_PUBLIC_API_URL set by expo start --lan
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5062/api';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
